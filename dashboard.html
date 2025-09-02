@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Dashboard</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+  <style>
+    .topnav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem;
+      background-color: #000;
+      color: white;
+    }
+
+    .nav-center {
+      font-size: 1.5rem;
+    }
+
+    .gear {
+      font-size: 1.5rem;
+      cursor: pointer;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 1rem;
+    }
+
+    .nav-links a {
+      color: white;
+      text-decoration: none;
+    }
+
+    .nav-links a:hover {
+      text-decoration: underline;
+    }
+
+    .hamburger {
+      display: none;
+      font-size: 1.5rem;
+      background: none;
+      border: none;
+      color: white;
+    }
+
+    @media (max-width: 600px) {
+      .hamburger {
+        display: block;
+      }
+
+      .nav-links {
+        display: none;
+      }
+
+      .nav-dropdown {
+        display: none;
+        position: absolute;
+        right: 1rem;
+        top: 3.5rem;
+        background: #073763;
+        flex-direction: column;
+        padding: 1rem;
+        border-radius: 6px;
+        z-index: 999;
+      }
+
+      .nav-dropdown.show {
+        display: flex;
+      }
+
+      .nav-dropdown a {
+        color: white;
+        margin: 0.5rem 0;
+        text-decoration: none;
+      }
+    }
+
+    #settingsPanel {
+      display: none;
+      position: fixed;
+      top: 4rem;
+      left: 1rem;
+      background: #111;
+      padding: 1rem;
+      border-radius: 8px;
+      z-index: 1001;
+    }
+
+    #settingsPanel.show {
+      display: block;
+    }
+
+    .logout-btn {
+      color: red;
+      background: none;
+      border: none;
+      text-decoration: underline;
+      margin-top: 1rem;
+      cursor: pointer;
+    }
+
+    #rfidModal {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background-color: rgba(0,0,0,0.8);
+      z-index: 1002;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .modal-content {
+      background-color: #1c1c1c;
+      padding: 2rem;
+      border-radius: 10px;
+      width: 90%;
+      max-width: 500px;
+      color: white;
+      text-align: center;
+    }
+
+    .close {
+      float: right;
+      cursor: pointer;
+      font-size: 1.5rem;
+      margin-top: -1rem;
+      margin-right: -1rem;
+    }
+
+    .rfid-link-btn {
+      padding: 0.5rem 1rem;
+      font-size: 1rem;
+      background: #073763;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      margin-top: 1rem;
+    }
+
+    .rfid-card {
+      background: #111;
+      padding: 1.5rem;
+      border-radius: 10px;
+      margin-top: 2rem;
+    }
+  </style>
+</head>
+<body>
+
+<!-- TOP NAVIGATION -->
+<nav class="topnav">
+  <div class="nav-left">
+    <span class="gear" onclick="toggleSettings()">⚙️</span>
+  </div>
+  <div class="nav-center">EcoLife</div>
+  <div class="nav-right desktop-links">
+    <a href="index.html">About Us</a>
+    <a href="products.html">Products</a>
+    <a href="dashboard.html" onclick="checkLogin(event)">Dashboard</a>
+    <a href="leaderboard.html">Leaderboard</a>
+    <a href="signup.html" id="signupLink">Sign Up</a>
+    <a href="login.html" id="loginLink">Login</a>
+  </div>
+  <button class="hamburger" onclick="toggleMobileNav()">☰</button>
+</nav>
+
+<!-- MOBILE DROPDOWN -->
+<div class="nav-dropdown" id="mobileDropdown">
+  <a href="index.html">About Us</a>
+  <a href="products.html">Products</a>
+  <a href="dashboard.html" onclick="checkLogin(event)">Dashboard</a>
+  <a href="leaderboard.html">Leaderboard</a>
+  <a href="signup.html" id="signupLinkMobile">Sign Up</a>
+  <a href="login.html" id="loginLinkMobile">Login</a>
+</div>
+
+<!-- Settings Panel -->
+<div id="settingsPanel">
+  <div id="linkRFIDOption" style="margin-bottom: 1rem;">
+    <button onclick="openRFIDModal()">🔗 Link RFID</button>
+  </div>
+  <button class="logout-btn" onclick="logout()">Log Out</button>
+</div>
+
+<!-- Background Animation -->
+<div class="bg-animation"></div>
+
+<!-- Main Content -->
+<div class="auth-box">
+  <h2>Welcome to your Dashboard</h2>
+  <p>This is your control panel to track your recycling points, view statistics, and more.</p>
+
+  <div id="rfidSection" class="rfid-card" style="display: none;">
+    <h3>🔗 Link Your RFID Card</h3>
+    <p>Scan the QR code from the scanner site to link your RFID card.</p>
+    <button onclick="openRFIDModal()" class="rfid-link-btn">Scan QR to Link RFID</button>
+  </div>
+</div>
+
+<!-- RFID Modal -->
+<div id="rfidModal">
+  <div class="modal-content">
+    <span class="close" onclick="closeRFIDModal()">✕</span>
+    <h2>Scan QR Code</h2>
+    <div id="qr-reader" style="width:100%; margin-top: 1rem;"></div>
+  </div>
+</div>
+
+<!-- Firebase & QR Logic -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+  import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyDW5APPZMu-lojVRNg89ZDBEY14YD77xd4",
+    authDomain: "ecolife--v1.firebaseapp.com",
+    databaseURL: "https://ecolife--v1-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId: "ecolife--v1"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+  const auth = getAuth(app);
+  let currentUser;
+
+  onAuthStateChanged(auth, user => {
+    if (user) {
+      currentUser = user;
+      document.cookie = "loggedIn=true; path=/";
+      get(ref(db, "users/" + user.uid + "/rfid")).then(snapshot => {
+        if (!snapshot.exists()) {
+          document.getElementById("rfidSection").style.display = "block";
+          document.getElementById("linkRFIDOption").style.display = "block";
+        }
+      });
+    } else {
+      document.cookie = "loggedIn=false; path=/";
+      window.location.href = "login.html";
+    }
+  });
+
+  window.openRFIDModal = function () {
+    document.getElementById("rfidModal").style.display = "flex";
+    const qrReader = new Html5Qrcode("qr-reader");
+    qrReader.start(
+      { facingMode: "environment" },
+      { fps: 10, qrbox: 250 },
+      async (decodedText) => {
+        if (decodedText && currentUser) {
+          await set(ref(db, `users/${currentUser.uid}/rfid`), decodedText);
+          await set(ref(db, `rfid_to_user/${decodedText}`), currentUser.uid);
+          qrReader.stop();
+          closeRFIDModal();
+          document.getElementById("rfidSection").style.display = "none";
+        }
+      },
+      (errorMessage) => {}
+    );
+  };
+
+  window.closeRFIDModal = function () {
+    document.getElementById("rfidModal").style.display = "none";
+    document.getElementById("qr-reader").innerHTML = "";
+  };
+</script>
+
+<!-- UI Logic -->
+<script>
+  const isLoggedIn = document.cookie.includes("loggedIn=true");
+  document.getElementById("signupLink").style.display = isLoggedIn ? "none" : "inline";
+  document.getElementById("loginLink").style.display = isLoggedIn ? "none" : "inline";
+  document.getElementById("signupLinkMobile").style.display = isLoggedIn ? "none" : "block";
+  document.getElementById("loginLinkMobile").style.display = isLoggedIn ? "none" : "block";
+
+  function toggleSettings() {
+    document.getElementById("settingsPanel").classList.toggle("show");
+  }
+
+  function toggleMobileNav() {
+    document.getElementById("mobileDropdown").classList.toggle("show");
+  }
+
+  function logout() {
+    document.cookie = "loggedIn=false; path=/";
+    window.location.href = "login.html";
+  }
+</script>
+
+</body>
+</html>

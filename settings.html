@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Settings | EcoLife</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <div class="topnav">
+    <div><strong>EcoLife</strong></div>
+    <div>
+      <a href="dashboard.html">Dashboard</a>
+      <a href="settings.html">Settings</a>
+      <a href="about.html">About</a>
+    </div>
+  </div>
+
+  <div class="auth-box">
+    <h2>Settings</h2>
+
+    <button onclick="toggleTheme()">Toggle Light / Dark Mode</button>
+    <button onclick="logout()">Log Out</button>
+  </div>
+
+  <script>
+    function toggleTheme() {
+      const current = document.documentElement.getAttribute("data-theme");
+      const next = current === "dark" ? "light" : "dark";
+      document.documentElement.setAttribute("data-theme", next);
+      document.cookie = "theme=" + next + "; path=/";
+    }
+
+    function logout() {
+      document.cookie = "login=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+      window.location.href = "index.html";
+    }
+
+    // On load, apply saved theme from cookie
+    const savedTheme = document.cookie.split('; ').find(c => c.startsWith('theme='));
+    if (savedTheme) {
+      document.documentElement.setAttribute('data-theme', savedTheme.split('=')[1]);
+    }
+  </script>
+
+</body>
+</html>

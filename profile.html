@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>EcoLife – Profile</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    .info-row {
+      margin-bottom: 15px;
+    }
+    .info-label {
+      font-weight: bold;
+    }
+    .uid {
+      font-family: monospace;
+      color: var(--accent);
+    }
+  </style>
+</head>
+<body>
+    <header class="topnav">
+  <div class="nav-left">
+    <a href="dashboard.html">🌱 EcoLife</a>
+  </div>
+  <div class="nav-right">
+    <a href="dashboard.html">Dashboard</a>
+    <a href="profile.html">Profile</a>
+    <a href="settings.html">Settings</a>
+    <a href="about.html">About</a>
+    <button onclick="toggleTheme()" title="Toggle Theme">🌓</button>
+    <button onclick="logout()" title="Logout">🚪</button>
+  </div>
+</header>
+
+  <div class="gear" onclick="toggleSettings()">⚙️</div>
+  <div id="settings" class="settings-dropdown">
+    <button onclick="toggleTheme()">Toggle Theme</button>
+    <button onclick="logout()">Logout</button>
+  </div>
+
+  <div class="container">
+    <h2>Your Profile</h2>
+
+    <div class="info-row">
+      <span class="info-label">Email:</span>
+      <span id="email">Loading...</span>
+    </div>
+
+    <div class="info-row">
+      <span class="info-label">RFID Linked:</span>
+      <span id="rfid" class="uid">Checking...</span>
+    </div>
+
+    <div class="info-row">
+      <span class="info-label">User ID:</span>
+      <span id="uid" class="uid">---</span>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
+    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
+    import { getDatabase, ref, get, onValue } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDW5APPZMu-lojVRNg89ZDBEY14YD77xd4",
+      authDomain: "ecolife--v1.firebaseapp.com",
+      databaseURL: "https://ecolife--v1-default-rtdb.europe-west1.firebasedatabase.app",
+      projectId: "ecolife--v1"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getDatabase(app);
+
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        document.getElementById("email").textContent = user.email;
+        document.getElementById("uid").textContent = user.uid;
+
+        const userRef = ref(db, 'users/' + user.uid);
+        onValue(userRef, (snapshot) => {
+          const data = snapshot.val();
+          document.getElementById("rfid").textContent = data?.rfid || "Not linked";
+        });
+      } else {
+        window.location.href = "index.html";
+      }
+    });
+
+    window.logout = function () {
+      signOut(auth).then(() => window.location.href = "index.html");
+    }
+
+    window.toggleSettings = function () {
+      document.getElementById("settings").classList.toggle("show");
+    }
+
+    window.toggleTheme = function () {
+      const newTheme = document.body.getAttribute("data-theme") === "dark" ? "light" : "dark";
+      document.body.setAttribute("data-theme", newTheme);
+      document.cookie = `theme=${newTheme}; path=/`;
+    }
+
+    const theme = document.cookie.split('; ').find(r => r.startsWith('theme='))?.split('=')[1];
+    document.body.setAttribute("data-theme", theme || "dark");
+  </script>
+  <script>
+  // Apply saved theme or fallback to system preference
+  const getSavedTheme = () => {
+    const cookie = document.cookie.split('; ').find(row => row.startsWith('theme='));
+    return cookie ? cookie.split('=')[1] : null;
+  };
+
+  const applyTheme = () => {
+    const saved = getSavedTheme();
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const theme = saved || (prefersDark ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+  };
+
+  applyTheme();
+</script>
+
+</body>
+</html>

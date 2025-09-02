@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Products</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      background: #0a192a;
+      color: white;
+      margin: 0;
+      padding: 0;
+    }
+
+    .topnav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem;
+      background-color: #000;
+      color: white;
+    }
+
+    .gear {
+      font-size: 1.5rem;
+      cursor: pointer;
+    }
+
+    .hamburger {
+      display: none;
+      font-size: 1.5rem;
+      background: none;
+      border: none;
+      color: white;
+    }
+
+    @media (max-width: 600px) {
+      .hamburger {
+        display: block;
+      }
+
+      .nav-dropdown {
+        display: none;
+        position: absolute;
+        right: 1rem;
+        top: 3.5rem;
+        background: #073763;
+        flex-direction: column;
+        padding: 1rem;
+        border-radius: 6px;
+        z-index: 999;
+      }
+
+      .nav-dropdown.show {
+        display: flex;
+      }
+
+      .nav-dropdown a {
+        color: white;
+        margin: 0.5rem 0;
+        text-decoration: none;
+      }
+    }
+
+    .product-container {
+      display: flex;
+      flex-direction: column;
+      gap: 3rem;
+      padding: 2rem;
+      max-width: 1200px;
+      margin: auto;
+    }
+
+    .product-card {
+      display: flex;
+      flex-direction: row;
+      gap: 2rem;
+      background: #07121f;
+      border-radius: 10px;
+      padding: 1.5rem;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .product-card img {
+      width: 200px;
+      height: auto;
+      border-radius: 10px;
+      object-fit: cover;
+    }
+
+    .product-info {
+      flex: 1;
+    }
+
+    .product-info h2 {
+      margin: 0;
+      font-size: 1.5rem;
+    }
+
+    .product-info p {
+      margin: 0.5rem 0;
+      color: #ccc;
+    }
+
+    .price {
+      font-size: 1.3rem;
+      color: #00ff99;
+      margin: 0.5rem 0;
+    }
+
+    .buy-btn {
+      padding: 0.7rem 1.5rem;
+      background-color: #00ff99;
+      color: #000;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+      margin-top: 1rem;
+    }
+
+    .buy-btn:hover {
+      background-color: #00cc7a;
+    }
+  </style>
+</head>
+<body>
+
+<!-- TOP NAVIGATION -->
+<nav class="topnav">
+  <div class="nav-left">
+    <span class="gear" onclick="toggleSettings()">⚙️</span>
+  </div>
+  <div class="nav-center">EcoLife</div>
+  <div class="nav-right desktop-links">
+    <a href="index.html">About Us</a>
+    <a href="products.html">Products</a>
+    <a href="dashboard.html" onclick="checkLogin(event)">Dashboard</a>
+    <a href="leaderboard.html">Leaderboard</a>
+    <a href="signup.html" id="signupLink">Sign Up</a>
+    <a href="login.html" id="loginLink">Login</a>
+  </div>
+  <button class="hamburger" onclick="toggleMobileNav()">☰</button>
+</nav>
+
+<!-- MOBILE DROPDOWN -->
+<div class="nav-dropdown" id="mobileDropdown">
+  <a href="index.html">About Us</a>
+  <a href="products.html">Products</a>
+  <a href="dashboard.html" onclick="checkLogin(event)">Dashboard</a>
+  <a href="leaderboard.html">Leaderboard</a>
+  <a href="signup.html" id="signupLinkMobile">Sign Up</a>
+  <a href="login.html" id="loginLinkMobile">Login</a>
+</div>
+
+<!-- Product Content -->
+<div class="product-container">
+
+  <!-- Product 1 -->
+  <div class="product-card">
+    <img src="https://via.placeholder.com/200x200?text=Product+1" alt="Product 1">
+    <div class="product-info">
+      <h2>Smart Plastic Recycling Bin</h2>
+      <p>Track your plastic, earn points, and contribute to a cleaner world.</p>
+      <div class="price">350 AED</div>
+<button class="buy-btn" onclick="openModal()">Buy Now</button>
+    </div>
+  </div>
+
+  <!-- Product 2 -->
+  <div class="product-card">
+    <img src="https://via.placeholder.com/200x200?text=Product+2" alt="Product 2">
+    <div class="product-info">
+      <h2>Smart Can Recycling Bin</h2>
+      <p>Track your plastic, earn points, and contribute to a cleaner world.</p>
+      <div class="price">300 AED</div>
+     <button class="buy-btn" onclick="openModal()">Buy Now</button>
+    </div>
+  </div>
+
+    <!-- Product 3 -->
+  <div class="product-card">
+    <img src="https://via.placeholder.com/200x200?text=Product+2" alt="Product 3">
+    <div class="product-info">
+      <h2>RFID EcoCard</h2>
+      <p>Link to your EcoLife account and scan to log your recycling progress instantly.</p>
+      <div class="price">25 AED</div>
+        <button class="buy-btn" onclick="openModal()">Buy Now</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- JS -->
+<script>
+  function toggleMobileNav() {
+    document.getElementById("mobileDropdown").classList.toggle("show");
+  }
+  function toggleSettings() {
+    // Add settings logic if needed
+  }
+</script>
+<script>function openModal() {
+  document.getElementById("purchaseModal").style.display = "flex";
+}
+
+function closeModal() {
+  document.getElementById("purchaseModal").style.display = "none";
+}
+</script>
+
+
+<!-- Purchase Popup Modal -->
+<div id="purchaseModal" style="display: none; position: fixed; top: 0; left: 0; 
+  width: 100%; height: 100%; background-color: rgba(0,0,0,0.7); 
+  justify-content: center; align-items: center; z-index: 1000;">
+
+  <div style="background: #1a1a1a; padding: 2rem; border-radius: 12px; 
+    color: white; max-width: 400px; text-align: center; position: relative;">
+    
+    <span onclick="closeModal()" 
+      style="position: absolute; top: 10px; right: 15px; cursor: pointer; font-size: 1.5rem;">✕</span>
+    
+    <h3>🛒 Purchase Info</h3>
+    <p>To purchase this product, please contact:</p>
+    <p style="color: #00ffcc;"><strong>support.ecolife@gmail.com</strong></p>
+  </div>
+</div>
+
+</body>
+</html>

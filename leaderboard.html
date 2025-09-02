@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Leaderboard</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    .topnav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem;
+      background-color: #000;
+      color: white;
+    }
+
+    .nav-center {
+      font-size: 1.5rem;
+    }
+
+    .gear {
+      font-size: 1.5rem;
+      cursor: pointer;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 1rem;
+    }
+
+    .nav-links a {
+      color: white;
+      text-decoration: none;
+    }
+
+    .nav-links a:hover {
+      text-decoration: underline;
+    }
+
+    .hamburger {
+      display: none;
+      font-size: 1.5rem;
+      background: none;
+      border: none;
+      color: white;
+    }
+
+    @media (max-width: 600px) {
+      .hamburger {
+        display: block;
+      }
+
+      .nav-links {
+        display: none;
+      }
+
+      .nav-dropdown {
+        display: none;
+        position: absolute;
+        right: 1rem;
+        top: 3.5rem;
+        background: #073763;
+        flex-direction: column;
+        padding: 1rem;
+        border-radius: 6px;
+        z-index: 999;
+      }
+
+      .nav-dropdown.show {
+        display: flex;
+      }
+
+      .nav-dropdown a {
+        color: white;
+        margin: 0.5rem 0;
+        text-decoration: none;
+      }
+    }
+
+    #settingsPanel {
+      display: none;
+      position: fixed;
+      top: 4rem;
+      left: 1rem;
+      background: #111;
+      padding: 1rem;
+      border-radius: 8px;
+      z-index: 1001;
+    }
+
+    #settingsPanel.show {
+      display: block;
+    }
+
+    .logout-btn {
+      color: red;
+      background: none;
+      border: none;
+      text-decoration: underline;
+      cursor: pointer;
+      margin-top: 1rem;
+    }
+
+    #popupMessage {
+      position: fixed;
+      top: 1rem;
+      left: 50%;
+      transform: translateX(-50%);
+      background-color: #ff4444;
+      color: white;
+      padding: 0.75rem 1.5rem;
+      border-radius: 5px;
+      display: none;
+      z-index: 1002;
+    }
+
+    ul#leaderboardList {
+      list-style: none;
+      padding-left: 0;
+      font-size: 1.1rem;
+    }
+
+    ul#leaderboardList li {
+      margin: 0.5rem 0;
+      padding: 0.75rem 1rem;
+      background: #111;
+      border-radius: 6px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .rank {
+      font-weight: bold;
+      color: var(--accent);
+    }
+  </style>
+</head>
+<body>
+
+<!-- TOP NAVIGATION -->
+<nav class="topnav">
+  <div class="nav-left">
+    <span class="gear" onclick="toggleSettings()">⚙️</span>
+  </div>
+  <div class="nav-center">EcoLife</div>
+  <div class="nav-right desktop-links">
+    <a href="index.html">About Us</a>
+    <a href="products.html">Products</a>
+    <a href="dashboard.html" onclick="checkLogin(event)">Dashboard</a>
+    <a href="leaderboard.html">Leaderboard</a>
+    <a href="signup.html" id="signupLink">Sign Up</a>
+    <a href="login.html" id="loginLink">Login</a>
+  </div>
+  <button class="hamburger" onclick="toggleMobileNav()">☰</button>
+</nav>
+
+<!-- MOBILE DROPDOWN -->
+<div class="nav-dropdown" id="mobileDropdown">
+  <a href="index.html">About Us</a>
+  <a href="products.html">Products</a>
+  <a href="dashboard.html" onclick="checkLogin(event)">Dashboard</a>
+  <a href="leaderboard.html">Leaderboard</a>
+  <a href="signup.html" id="signupLinkMobile">Sign Up</a>
+  <a href="login.html" id="loginLinkMobile">Login</a>
+</div>
+
+<!-- Settings Panel -->
+<div id="settingsPanel">
+  <button class="logout-btn" onclick="logout()">Log Out</button>
+</div>
+
+<!-- Popup -->
+<div id="popupMessage">
+  You must be logged in to view the dashboard.
+  <span class="close-btn" onclick="this.parentElement.style.display='none'">✕</span>
+</div>
+
+<!-- Background Animation -->
+<div class="bg-animation"></div>
+
+<!-- Leaderboard -->
+<div class="auth-box" style="max-width: 700px; text-align: center;">
+  <h2>🏆 Leaderboard</h2>
+  <ul id="leaderboardList">Loading...</ul>
+</div>
+
+<!-- Firebase Leaderboard Logic -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyDW5APPZMu-lojVRNg89ZDBEY14YD77xd4",
+    authDomain: "ecolife--v1.firebaseapp.com",
+    databaseURL: "https://ecolife--v1-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId: "ecolife--v1"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+
+  async function loadLeaderboard() {
+    const snap = await get(ref(db, "users/"));
+    const leaderboardList = document.getElementById("leaderboardList");
+
+    if (snap.exists()) {
+      const users = snap.val();
+      const sorted = Object.entries(users).sort((a, b) => (b[1].points || 0) - (a[1].points || 0));
+      leaderboardList.innerHTML = "";
+      sorted.forEach(([uid, user], index) => {
+        const name = user.name || "Unnamed";
+        const points = user.points || 0;
+        const trophy = index === 0 ? " 🥇" : index === 1 ? " 🥈" : index === 2 ? " 🥉" : "";
+        leaderboardList.innerHTML += `
+          <li>
+            <span class="rank">#${index + 1}${trophy}</span> ${name}
+            <span>${points} pts</span>
+          </li>`;
+      });
+    } else {
+      leaderboardList.innerHTML = "<li>No users found.</li>";
+    }
+  }
+
+  loadLeaderboard();
+</script>
+
+<!-- Navbar Behavior -->
+<script>
+  const isLoggedIn = document.cookie.includes("loggedIn=true");
+
+  document.getElementById("signupLink").style.display = isLoggedIn ? "none" : "inline";
+  document.getElementById("loginLink").style.display = isLoggedIn ? "none" : "inline";
+
+  document.getElementById("signupLinkMobile").style.display = isLoggedIn ? "none" : "block";
+  document.getElementById("loginLinkMobile").style.display = isLoggedIn ? "none" : "block";
+
+  function toggleSettings() {
+    document.getElementById("settingsPanel").classList.toggle("show");
+  }
+
+  function toggleMobileNav() {
+    document.getElementById("mobileDropdown").classList.toggle("show");
+  }
+
+  function logout() {
+    document.cookie = "loggedIn=false; path=/";
+    window.location.href = "login.html";
+  }
+
+  function checkLogin(e) {
+    if (!isLoggedIn) {
+      e.preventDefault();
+      const popup = document.getElementById("popupMessage");
+      popup.style.display = "block";
+      setTimeout(() => popup.style.display = "none", 5000);
+    }
+  }
+</script>
+
+</body>
+</html>
