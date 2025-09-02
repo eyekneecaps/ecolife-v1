@@ -121,6 +121,39 @@
 
   applyTheme();
 </script>
+ <script>
+  // REFERENCE TO DATABASE
+const db = firebase.database();
 
+// Display all UIDs (linked & unlinked) in a table
+const dashboardTable = document.getElementById("dashboardTable"); // make sure this table exists in HTML
+db.ref("uids").on("value", snapshot => {
+  const data = snapshot.val() || {};
+  dashboardTable.innerHTML = `<tr><th>UID</th><th>Name</th><th>Points</th></tr>`;
+  for (let uid in data) {
+    const name = data[uid].name || "N/A"; // shows N/A if not linked
+    const points = data[uid].points || 0;
+    const row = document.createElement("tr");
+    row.innerHTML = `<td>${uid}</td><td>${name}</td><td>${points}</td>`;
+    dashboardTable.appendChild(row);
+  }
+});
+
+// Leaderboard for linked users only
+const leaderboardTable = document.getElementById("leaderboardTable"); // make sure this table exists
+db.ref("users").on("value", snapshot => {
+  const users = snapshot.val() || {};
+  leaderboardTable.innerHTML = `<tr><th>Name</th><th>Points</th></tr>`;
+  Object.values(users)
+    .sort((a,b) => (b.points || 0) - (a.points || 0))
+    .forEach(user => {
+      const row = document.createElement("tr");
+      row.innerHTML = `<td>${user.name}</td><td>${user.points || 0}</td>`;
+      leaderboardTable.appendChild(row);
+    });
+});
+ 
+</script>
 </body>
 </html>
+
