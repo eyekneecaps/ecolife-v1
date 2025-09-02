@@ -1,17 +1,20 @@
 <!DOCTYPE html>
 <html lang="en" data-theme="dark">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>EcoLife Dashboard</title>
-  <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Create Account</title>
+  <link rel="stylesheet" href="style.css" />
   <style>
-    .topnav { display: flex; justify-content: space-between; align-items: center; padding: 1rem; background: #000; color: white; position: relative; z-index: 10;}
-    .gear { font-size: 1.5rem; cursor: pointer; }
+    .topnav { display: flex; justify-content: space-between; align-items: center; padding: 1rem; background: #000; }
+    .gear { font-size: 1.5rem; cursor: pointer; color: white; }
     .hamburger { display: none; font-size: 1.5rem; background: none; border: none; color: white; }
     @media (max-width: 600px) {
       .hamburger { display: block; }
-      .nav-dropdown { display: none; position: absolute; right: 1rem; top: 3.5rem; background: #073763; flex-direction: column; padding: 1rem; border-radius: 6px; z-index: 999; }
+      .nav-dropdown {
+        display: none; position: absolute; right: 1rem; top: 3.5rem;
+        background: #073763; flex-direction: column; padding: 1rem; border-radius: 6px; z-index: 999;
+      }
       .nav-dropdown.show { display: flex; }
       .nav-dropdown a { color: white; margin: 0.5rem 0; text-decoration: none; }
     }
@@ -19,16 +22,7 @@
     #settingsPanel.show { display: block; }
     .logout-btn { color: red; background: none; border: none; margin-top: 1rem; text-decoration: underline; cursor: pointer; }
     #popupMessage { position: fixed; top: 1rem; left: 50%; transform: translateX(-50%); background-color: #ff4444; color: white; padding: 0.75rem 1.5rem; border-radius: 5px; display: none; z-index: 1002; }
-    table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
-    th, td { padding: 0.5rem; border: 1px solid #444; text-align: center; color: white; }
-    th { background: #073763; }
-    h2 { margin-top: 2rem; color: var(--accent); }
   </style>
-
-  <!-- Firebase SDKs -->
-  <script src="https://www.gstatic.com/firebasejs/10.22.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.22.0/firebase-database-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.22.0/firebase-auth-compat.js"></script>
 </head>
 <body>
 
@@ -40,7 +34,8 @@
   <div class="nav-center">EcoLife</div>
   <div class="nav-right desktop-links">
     <a href="index.html">About Us</a>
-    <a href="dashboard.html">Dashboard</a>
+    <a href="products.html">Products</a>
+    <a href="dashboard.html" onclick="checkLogin(event)">Dashboard</a>
     <a href="leaderboard.html">Leaderboard</a>
     <a href="signup.html" id="signupLink">Sign Up</a>
     <a href="login.html" id="loginLink">Login</a>
@@ -48,14 +43,15 @@
   <button class="hamburger" onclick="toggleMobileNav()">☰</button>
 </nav>
 
+<!-- MOBILE DROPDOWN -->
 <div class="nav-dropdown" id="mobileDropdown">
   <a href="index.html">About Us</a>
-  <a href="dashboard.html">Dashboard</a>
+  <a href="products.html">Products</a>
+  <a href="dashboard.html" onclick="checkLogin(event)">Dashboard</a>
   <a href="leaderboard.html">Leaderboard</a>
   <a href="signup.html" id="signupLinkMobile">Sign Up</a>
   <a href="login.html" id="loginLinkMobile">Login</a>
 </div>
-
 <div id="settingsPanel">
   <button class="logout-btn" onclick="logout()">Log Out</button>
 </div>
@@ -64,45 +60,99 @@
 
 <div class="bg-animation"></div>
 
-<div class="auth-box" style="max-width: 900px; margin: auto; text-align: center;">
-  <h2>Dashboard - UID Points</h2>
-  <table id="dashboardTable">
-    <tr>
-      <th>UID</th>
-      <th>Name</th>
-      <th>Points</th>
-    </tr>
-  </table>
+<div class="auth-box">
+  <h2>Create Account</h2>
+  <form id="signupForm">
+    <input type="text" id="signupName" placeholder="Full Name" required />
+    <input type="email" id="signupEmail" placeholder="Email" required />
+    <input type="password" id="signupPassword" placeholder="Password" required />
 
-  <h2>Leaderboard</h2>
-  <table id="leaderboardTable">
-    <tr>
-      <th>User Name</th>
-      <th>Points</th>
-    </tr>
-  </table>
+    <ul class="password-rules" id="passwordRules">
+      <li id="ruleLength">❌ Minimum 8 characters</li>
+      <li id="ruleUpper">❌ At least one uppercase letter</li>
+      <li id="ruleNumber">❌ At least one number</li>
+      <li id="ruleSpecial">❌ At least one special character</li>
+    </ul>
+
+    <div class="error-message" id="signupError"></div>
+    <button type="submit">Create Account</button>
+    <p style="text-align:center; margin-top: 1rem;">
+      Already have an account? <a href="login.html" style="color: var(--accent); font-weight: bold;">Sign In</a>
+    </p>
+  </form>
 </div>
 
-<script>
-  // Firebase initialization
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getAuth, createUserWithEmailAndPassword, updateProfile } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+  import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
   const firebaseConfig = {
-    apiKey: "YOUR_API_KEY",
-    authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+    apiKey: "AIzaSyDW5APPZMu-lojVRNg89ZDBEY14YD77xd4",
+    authDomain: "ecolife--v1.firebaseapp.com",
     databaseURL: "https://ecolife--v1-default-rtdb.europe-west1.firebasedatabase.app",
-    projectId: "YOUR_PROJECT_ID",
-    storageBucket: "YOUR_PROJECT_ID.appspot.com",
-    messagingSenderId: "YOUR_SENDER_ID",
-    appId: "YOUR_APP_ID"
+    projectId: "ecolife--v1"
   };
-  firebase.initializeApp(firebaseConfig);
-  const db = firebase.database();
 
-  // Navigation & settings
-  function toggleSettings() { document.getElementById("settingsPanel").classList.toggle("show"); }
-  function toggleMobileNav() { document.getElementById("mobileDropdown").classList.toggle("show"); }
-  function logout() { document.cookie = "loggedIn=false; path=/"; location.href = "login.html"; }
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getDatabase(app);
 
-  // Show/hide links based on login
+  const passwordInput = document.getElementById("signupPassword");
+  passwordInput.addEventListener("input", () => {
+    const val = passwordInput.value;
+    document.getElementById("ruleLength").innerText = val.length >= 8 ? "✅ Minimum 8 characters" : "❌ Minimum 8 characters";
+    document.getElementById("ruleUpper").innerText = /[A-Z]/.test(val) ? "✅ At least one uppercase letter" : "❌ At least one uppercase letter";
+    document.getElementById("ruleNumber").innerText = /\d/.test(val) ? "✅ At least one number" : "❌ At least one number";
+    document.getElementById("ruleSpecial").innerText = /[^A-Za-z0-9]/.test(val) ? "✅ At least one special character" : "❌ At least one special character";
+  });
+
+  document.getElementById("signupForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const name = document.getElementById("signupName").value.trim();
+    const email = document.getElementById("signupEmail").value.trim();
+    const password = passwordInput.value;
+    const errorBox = document.getElementById("signupError");
+    errorBox.textContent = "";
+
+    if (password.length < 8 || !/[A-Z]/.test(password) || !/\d/.test(password) || !/[^A-Za-z0-9]/.test(password)) {
+      errorBox.textContent = "Password does not meet all requirements.";
+      return;
+    }
+
+    try {
+      const cred = await createUserWithEmailAndPassword(auth, email, password);
+      await updateProfile(cred.user, { displayName: name });
+      await set(ref(db, "users/" + cred.user.uid), { name, email, points: 0 });
+      document.cookie = "loggedIn=true; path=/";
+      window.location.href = "dashboard.html";
+    } catch (err) {
+      errorBox.textContent = err.message;
+    }
+  });
+</script>
+
+<script>
+  function toggleSettings() {
+    document.getElementById("settingsPanel").classList.toggle("show");
+  }
+  function toggleMobileNav() {
+    document.getElementById("mobileDropdown").classList.toggle("show");
+  }
+  function logout() {
+    document.cookie = "loggedIn=false; path=/";
+    window.location.href = "login.html";
+  }
+  function checkLogin(event) {
+    const isLoggedIn = document.cookie.includes("loggedIn=true");
+    if (!isLoggedIn) {
+      event.preventDefault();
+      const popup = document.getElementById("popupMessage");
+      popup.style.display = "block";
+      setTimeout(() => popup.style.display = "none", 5000);
+    }
+  }
+
   const isLoggedIn = document.cookie.includes("loggedIn=true");
   document.getElementById("signupLink").style.display = isLoggedIn ? "none" : "inline";
   document.getElementById("loginLink").style.display = isLoggedIn ? "none" : "inline";
@@ -110,37 +160,40 @@
     document.getElementById("signupLinkMobile").style.display = isLoggedIn ? "none" : "block";
     document.getElementById("loginLinkMobile").style.display = isLoggedIn ? "none" : "block";
   }
-
-  // Dashboard: show all UIDs with points
-  const dashboardRef = db.ref("uids");
-  dashboardRef.on("value", snapshot => {
-    const data = snapshot.val() || {};
-    const table = document.getElementById("dashboardTable");
-    table.innerHTML = `<tr><th>UID</th><th>Name</th><th>Points</th></tr>`;
-    for (let uid in data) {
-      const name = data[uid].name || "N/A";
-      const points = data[uid].points || 0;
-      const row = document.createElement("tr");
-      row.innerHTML = `<td>${uid}</td><td>${name}</td><td>${points}</td>`;
-      table.appendChild(row);
-    }
-  });
-
-  // Leaderboard: show top users (linked)
-  const usersRef = db.ref("users");
-  usersRef.on("value", snapshot => {
-    const users = snapshot.val() || {};
-    const leaderboard = document.getElementById("leaderboardTable");
-    leaderboard.innerHTML = `<tr><th>User Name</th><th>Points</th></tr>`;
-    // Sort by points descending
-    const sortedUsers = Object.values(users).sort((a,b) => (b.points || 0) - (a.points || 0));
-    sortedUsers.forEach(user => {
-      const row = document.createElement("tr");
-      row.innerHTML = `<td>${user.name}</td><td>${user.points || 0}</td>`;
-      leaderboard.appendChild(row);
-    });
-  });
 </script>
 
+  <script>
+  // REFERENCE TO DATABASE
+const db = firebase.database();
+
+// Display all UIDs (linked & unlinked) in a table
+const dashboardTable = document.getElementById("dashboardTable"); // make sure this table exists in HTML
+db.ref("uids").on("value", snapshot => {
+  const data = snapshot.val() || {};
+  dashboardTable.innerHTML = `<tr><th>UID</th><th>Name</th><th>Points</th></tr>`;
+  for (let uid in data) {
+    const name = data[uid].name || "N/A"; // shows N/A if not linked
+    const points = data[uid].points || 0;
+    const row = document.createElement("tr");
+    row.innerHTML = `<td>${uid}</td><td>${name}</td><td>${points}</td>`;
+    dashboardTable.appendChild(row);
+  }
+});
+
+// Leaderboard for linked users only
+const leaderboardTable = document.getElementById("leaderboardTable"); // make sure this table exists
+db.ref("users").on("value", snapshot => {
+  const users = snapshot.val() || {};
+  leaderboardTable.innerHTML = `<tr><th>Name</th><th>Points</th></tr>`;
+  Object.values(users)
+    .sort((a,b) => (b.points || 0) - (a.points || 0))
+    .forEach(user => {
+      const row = document.createElement("tr");
+      row.innerHTML = `<td>${user.name}</td><td>${user.points || 0}</td>`;
+      leaderboardTable.appendChild(row);
+    });
+});
+ 
+</script>
 </body>
 </html>
