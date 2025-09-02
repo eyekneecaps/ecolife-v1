@@ -6,6 +6,7 @@
   <title>About Us</title>
   <link rel="stylesheet" href="style.css" />
   <style>
+    /* Your existing styles remain unchanged */
     .topnav {
       display: flex;
       align-items: center;
@@ -16,94 +17,26 @@
       position: relative;
       z-index: 10;
     }
-
-    .gear {
-      font-size: 1.5rem;
-      cursor: pointer;
-    }
-
-    .hamburger {
-      display: none;
-      font-size: 1.5rem;
-      background: none;
-      border: none;
-      color: white;
-    }
-
+    .gear { font-size: 1.5rem; cursor: pointer; }
+    .hamburger { display: none; font-size: 1.5rem; background: none; border: none; color: white; }
     @media (max-width: 600px) {
-      .hamburger {
-        display: block;
-      }
-
-      .nav-dropdown {
-        display: none;
-        position: absolute;
-        right: 1rem;
-        top: 3.5rem;
-        background: #073763;
-        flex-direction: column;
-        padding: 1rem;
-        border-radius: 6px;
-        z-index: 999;
-      }
-
-      .nav-dropdown.show {
-        display: flex;
-      }
-
-      .nav-dropdown a {
-        color: white;
-        margin: 0.5rem 0;
-        text-decoration: none;
-      }
-
-      .nav-dropdown a:hover {
-        text-decoration: underline;
-      }
+      .hamburger { display: block; }
+      .nav-dropdown { display: none; position: absolute; right: 1rem; top: 3.5rem; background: #073763; flex-direction: column; padding: 1rem; border-radius: 6px; z-index: 999; }
+      .nav-dropdown.show { display: flex; }
+      .nav-dropdown a { color: white; margin: 0.5rem 0; text-decoration: none; }
+      .nav-dropdown a:hover { text-decoration: underline; }
     }
-
-    #settingsPanel {
-      display: none;
-      position: fixed;
-      top: 4rem;
-      left: 1rem;
-      background: #111;
-      padding: 1rem;
-      border-radius: 8px;
-      z-index: 1001;
-    }
-
-    #settingsPanel.show {
-      display: block;
-    }
-
-    .logout-btn {
-      color: red;
-      text-decoration: underline;
-      background: none;
-      border: none;
-      margin-top: 1rem;
-      cursor: pointer;
-    }
-
-    #popupMessage {
-      position: fixed;
-      top: 1rem;
-      left: 50%;
-      transform: translateX(-50%);
-      background-color: #ff4444;
-      color: white;
-      padding: 0.75rem 1.5rem;
-      border-radius: 5px;
-      display: none;
-      z-index: 1002;
-    }
-
-    #popupMessage .close-btn {
-      margin-left: 1rem;
-      cursor: pointer;
-    }
+    #settingsPanel { display: none; position: fixed; top: 4rem; left: 1rem; background: #111; padding: 1rem; border-radius: 8px; z-index: 1001; }
+    #settingsPanel.show { display: block; }
+    .logout-btn { color: red; text-decoration: underline; background: none; border: none; margin-top: 1rem; cursor: pointer; }
+    #popupMessage { position: fixed; top: 1rem; left: 50%; transform: translateX(-50%); background-color: #ff4444; color: white; padding: 0.75rem 1.5rem; border-radius: 5px; display: none; z-index: 1002; }
+    #popupMessage .close-btn { margin-left: 1rem; cursor: pointer; }
   </style>
+
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/10.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.22.0/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.22.0/firebase-auth-compat.js"></script>
 </head>
 <body>
 
@@ -168,19 +101,23 @@
 
 <!-- Scripts -->
 <script>
-  function toggleSettings() {
-    document.getElementById("settingsPanel").classList.toggle("show");
-  }
+  // Firebase initialization
+  const firebaseConfig = {
+    apiKey: "YOUR_API_KEY",
+    authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+    databaseURL: "https://ecolife--v1-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId: "YOUR_PROJECT_ID",
+    storageBucket: "YOUR_PROJECT_ID.appspot.com",
+    messagingSenderId: "YOUR_SENDER_ID",
+    appId: "YOUR_APP_ID"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const database = firebase.database();
 
-  function toggleMobileNav() {
-    document.getElementById("mobileDropdown").classList.toggle("show");
-  }
-
-  function logout() {
-    document.cookie = "loggedIn=false; path=/";
-    location.href = "login.html";
-  }
-
+  // Navigation & settings
+  function toggleSettings() { document.getElementById("settingsPanel").classList.toggle("show"); }
+  function toggleMobileNav() { document.getElementById("mobileDropdown").classList.toggle("show"); }
+  function logout() { document.cookie = "loggedIn=false; path=/"; location.href = "login.html"; }
   function checkLogin(e) {
     const isLoggedIn = document.cookie.includes("loggedIn=true");
     if (!isLoggedIn) {
