@@ -51,6 +51,7 @@
     <a href="products.html">Products</a>
     <a href="dashboard.html" onclick="checkLogin(event)">Dashboard</a>
     <a href="leaderboard.html">Leaderboard</a>
+     <span id="userNameDisplay" style="color: var(--accent); font-weight: bold;"></span>
     <a href="signup.html" id="signupLink">Sign Up</a>
     <a href="login.html" id="loginLink">Login</a>
   </div>
@@ -170,6 +171,30 @@ db.ref("users").on("value", snapshot => {
 });
  
 </script>
+  <Script>
+  const userNameDisplay = document.getElementById("userNameDisplay");
+const isLoggedIn = document.cookie.includes("loggedIn=true");
+
+if (isLoggedIn) {
+  // Get user info from Firebase Auth
+  const user = firebase.auth().currentUser;
+
+  if (user) {
+    userNameDisplay.textContent = `Hello, ${user.displayName}`;
+  } else {
+    userNameDisplay.textContent = "Hello, User";
+  }
+
+  // Hide signup/login links
+  document.getElementById("signupLink").style.display = "none";
+  document.getElementById("loginLink").style.display = "none";
+} else {
+  userNameDisplay.textContent = "";
+  document.getElementById("signupLink").style.display = "inline";
+  document.getElementById("loginLink").style.display = "inline";
+}
+</Script>
 </body>
 </html>
+
 
