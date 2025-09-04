@@ -98,10 +98,11 @@
 </div>
 
 <!-- HTML5 QRCode library -->
-<script src="https://unpkg.com/html5-qrcode/minified/html5-qrcode.min.js"></script>
-
-<!-- Firebase Modular v10 + RFID Script -->
 <script type="module">
+  // ✅ Import Html5Qrcode first
+  import { Html5Qrcode } from "https://unpkg.com/html5-qrcode?module";
+
+  // ✅ Import Firebase modules
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
   import { getDatabase, ref, get, set, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
   import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
@@ -120,7 +121,7 @@
   const auth = getAuth(app);
   let currentUser;
 
-  // --- Auth Check ---
+  // --- Auth check ---
   onAuthStateChanged(auth, user => {
     if (user) {
       currentUser = user;
@@ -137,10 +138,7 @@
   // --- RFID Linking via QR ---
   window.openRFIDModal = function () {
     document.getElementById("rfidModal").style.display = "flex";
-
-    // ✅ Use global Html5Qrcode
-    const qrReader = new window.Html5Qrcode("qr-reader");
-
+    const qrReader = new Html5Qrcode("qr-reader"); // ✅ Now works
     qrReader.start(
       { facingMode: "environment" },
       { fps: 10, qrbox: 250 },
@@ -149,24 +147,16 @@
         const uid = decodedText;
         try {
           const unlinkedRef = ref(db, `unlinked_uids/${uid}`);
-          const linkedRef = ref(db, `linked_uids/${uid}`);
-          const accountRef = ref(db, `users/${currentUser.uid}`);
-
+          const linkedRef   = ref(db, `linked_uids/${uid}`);
+          const accountRef  = ref(db, `users/${currentUser.uid}`);
           const unlinkedSnap = await get(unlinkedRef);
           const uidData = unlinkedSnap.exists() ? unlinkedSnap.val() : { points: 0 };
-
           const accountSnap = await get(accountRef);
-          const accountData = accountSnap.exists()
-            ? accountSnap.val()
-            : { name: currentUser.displayName || "User", email: currentUser.email };
-
+          const accountData = accountSnap.exists() ? accountSnap.val() : { name: currentUser.displayName || "User", email: currentUser.email };
           await set(linkedRef, { ...accountData, points: uidData.points || 0 });
-
           if (unlinkedSnap.exists()) await set(unlinkedRef, null);
-
           await set(ref(db, `rfid_to_user/${uid}`), currentUser.uid);
           await set(ref(db, `users/${currentUser.uid}/rfid`), uid);
-
           qrReader.stop();
           closeRFIDModal();
           document.getElementById("rfidSection").style.display = "none";
@@ -184,6 +174,7 @@
     document.getElementById("rfidModal").style.display = "none";
     document.getElementById("qr-reader").innerHTML = "";
   };
+
 
   // --- Dashboard Table ---
   const dashboardTable = document.getElementById("dashboardTable");
