@@ -5,150 +5,35 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Dashboard</title>
   <link rel="stylesheet" href="style.css" />
-  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+  <script src="https://unpkg.com/html5-qrcode/minified/html5-qrcode.min.js"></script>
   <style>
-    .topnav {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 1rem;
-      background-color: #000;
-      color: white;
-    }
-
-    .nav-center {
-      font-size: 1.5rem;
-    }
-
-    .gear {
-      font-size: 1.5rem;
-      cursor: pointer;
-    }
-
-    .nav-links {
-      display: flex;
-      gap: 1rem;
-    }
-
-    .nav-links a {
-      color: white;
-      text-decoration: none;
-    }
-
-    .nav-links a:hover {
-      text-decoration: underline;
-    }
-
-    .hamburger {
-      display: none;
-      font-size: 1.5rem;
-      background: none;
-      border: none;
-      color: white;
-    }
-
+    /* --- Navigation --- */
+    .topnav { display: flex; justify-content: space-between; align-items: center; padding: 1rem; background-color: #000; color: white; }
+    .nav-center { font-size: 1.5rem; }
+    .gear { font-size: 1.5rem; cursor: pointer; }
+    .nav-links { display: flex; gap: 1rem; }
+    .nav-links a { color: white; text-decoration: none; }
+    .nav-links a:hover { text-decoration: underline; }
+    .hamburger { display: none; font-size: 1.5rem; background: none; border: none; color: white; }
     @media (max-width: 600px) {
-      .hamburger {
-        display: block;
-      }
-
-      .nav-links {
-        display: none;
-      }
-
-      .nav-dropdown {
-        display: none;
-        position: absolute;
-        right: 1rem;
-        top: 3.5rem;
-        background: #073763;
-        flex-direction: column;
-        padding: 1rem;
-        border-radius: 6px;
-        z-index: 999;
-      }
-
-      .nav-dropdown.show {
-        display: flex;
-      }
-
-      .nav-dropdown a {
-        color: white;
-        margin: 0.5rem 0;
-        text-decoration: none;
-      }
+      .hamburger { display: block; }
+      .nav-links { display: none; }
+      .nav-dropdown { display: none; position: absolute; right: 1rem; top: 3.5rem; background: #073763; flex-direction: column; padding: 1rem; border-radius: 6px; z-index: 999; }
+      .nav-dropdown.show { display: flex; }
+      .nav-dropdown a { color: white; margin: 0.5rem 0; text-decoration: none; }
     }
 
-    #settingsPanel {
-      display: none;
-      position: fixed;
-      top: 4rem;
-      left: 1rem;
-      background: #111;
-      padding: 1rem;
-      border-radius: 8px;
-      z-index: 1001;
-    }
+    /* --- Settings Panel --- */
+    #settingsPanel { display: none; position: fixed; top: 4rem; left: 1rem; background: #111; padding: 1rem; border-radius: 8px; z-index: 1001; }
+    #settingsPanel.show { display: block; }
+    .logout-btn { color: red; background: none; border: none; text-decoration: underline; margin-top: 1rem; cursor: pointer; }
 
-    #settingsPanel.show {
-      display: block;
-    }
-
-    .logout-btn {
-      color: red;
-      background: none;
-      border: none;
-      text-decoration: underline;
-      margin-top: 1rem;
-      cursor: pointer;
-    }
-
-    #rfidModal {
-      display: none;
-      position: fixed;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      background-color: rgba(0,0,0,0.8);
-      z-index: 1002;
-      justify-content: center;
-      align-items: center;
-    }
-
-    .modal-content {
-      background-color: #1c1c1c;
-      padding: 2rem;
-      border-radius: 10px;
-      width: 90%;
-      max-width: 500px;
-      color: white;
-      text-align: center;
-    }
-
-    .close {
-      float: right;
-      cursor: pointer;
-      font-size: 1.5rem;
-      margin-top: -1rem;
-      margin-right: -1rem;
-    }
-
-    .rfid-link-btn {
-      padding: 0.5rem 1rem;
-      font-size: 1rem;
-      background: #073763;
-      color: white;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      margin-top: 1rem;
-    }
-
-    .rfid-card {
-      background: #111;
-      padding: 1.5rem;
-      border-radius: 10px;
-      margin-top: 2rem;
-    }
+    /* --- RFID Modal --- */
+    #rfidModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.8); z-index: 1002; justify-content: center; align-items: center; }
+    .modal-content { background-color: #1c1c1c; padding: 2rem; border-radius: 10px; width: 90%; max-width: 500px; color: white; text-align: center; }
+    .close { float: right; cursor: pointer; font-size: 1.5rem; margin-top: -1rem; margin-right: -1rem; }
+    .rfid-link-btn { padding: 0.5rem 1rem; font-size: 1rem; background: #073763; color: white; border: none; border-radius: 6px; cursor: pointer; margin-top: 1rem; }
+    .rfid-card { background: #111; padding: 1.5rem; border-radius: 10px; margin-top: 2rem; }
   </style>
 </head>
 <body>
@@ -188,9 +73,6 @@
   <button class="logout-btn" onclick="logout()">Log Out</button>
 </div>
 
-<!-- Background Animation -->
-<div class="bg-animation"></div>
-
 <!-- Main Content -->
 <div class="auth-box">
   <h2>Welcome to your Dashboard</h2>
@@ -201,6 +83,9 @@
     <p>Scan the QR code from the scanner site to link your RFID card.</p>
     <button onclick="openRFIDModal()" class="rfid-link-btn">Scan QR to Link RFID</button>
   </div>
+
+  <table id="dashboardTable" style="margin-top: 2rem; width: 100%; color: white;"></table>
+  <table id="leaderboardTable" style="margin-top: 2rem; width: 100%; color: white;"></table>
 </div>
 
 <!-- RFID Modal -->
@@ -212,101 +97,117 @@
   </div>
 </div>
 
-<!-- Firebase SDKs -->
-<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js"></script>
-<script src="https://unpkg.com/html5-qrcode/minified/html5-qrcode.min.js"></script>
+<!-- Firebase Modular v10 + RFID Script -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getDatabase, ref, get, set, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+  import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
-<script>
-  // ✅ Your Firebase config (replace with your own values from Firebase Console)
+  // --- Firebase Config ---
   const firebaseConfig = {
-    apiKey: "YOUR_API_KEY",
-    authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-    databaseURL: "https://YOUR_PROJECT_ID.firebaseio.com",
-    projectId: "YOUR_PROJECT_ID",
-    storageBucket: "YOUR_PROJECT_ID.appspot.com",
-    messagingSenderId: "YOUR_SENDER_ID",
-    appId: "YOUR_APP_ID"
+    apiKey: "AIzaSyDW5APPZMu-lojVRNg89ZDBEY14YD77xd4",
+    authDomain: "ecolife--v1.firebaseapp.com",
+    databaseURL: "https://ecolife--v1-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId: "ecolife--v1"
   };
 
-  // ✅ Initialize Firebase
-  const app = firebase.initializeApp(firebaseConfig);
-  const auth = firebase.auth();
-  const db = firebase.database();
+  // --- Initialize Firebase ---
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+  const auth = getAuth(app);
+  let currentUser;
 
-  // ✅ RFID Linking Function
-  async function linkRFID(uid) {
-    const user = auth.currentUser;
-    if (!user) {
-      alert("You must be logged in to link RFID");
-      return;
-    }
-
-    const userRef = db.ref("users/" + user.uid);
-
-    try {
-      // get unlinked UID data
-      const unlinkedRef = db.ref("unlinked_uids/" + uid);
-      const snapshot = await unlinkedRef.get();
-
-      let points = 0;
-      if (snapshot.exists()) {
-        points = snapshot.val().points || 0;
-      }
-
-      // save into linked_uids
-      const accountData = (await userRef.get()).val() || {};
-      await db.ref("linked_uids/" + uid).set({
-        name: accountData.name || "Unnamed",
-        email: accountData.email || "No email",
-        points: points
-      });
-
-      // update user profile with RFID
-      await userRef.update({ rfid: uid });
-
-      // create reverse mapping
-      await db.ref("rfid_to_user/" + uid).set(user.uid);
-
-      // remove from unlinked
-      await unlinkedRef.remove();
-
-      alert("RFID Linked Successfully!");
-    } catch (err) {
-      console.error("RFID Linking Error:", err);
-      alert("Error linking RFID. Check console.");
-    }
-  }
-
-  // ✅ QR Scanner Setup
-  function startQRScanner() {
-    const html5QrCode = new Html5Qrcode("qr-reader");
-    const qrConfig = { fps: 10, qrbox: 250 };
-
-    html5QrCode.start(
-      { facingMode: "environment" },
-      qrConfig,
-      (decodedText) => {
-        html5QrCode.stop().then(() => {
-          console.log("Scanned UID:", decodedText);
-          linkRFID(decodedText);
-        }).catch(err => console.error("Stop failed:", err));
-      },
-      (errorMessage) => {
-        console.warn("QR scan error:", errorMessage);
-      }
-    ).catch(err => console.error("Unable to start scanner:", err));
-  }
-
-  // ✅ Auto-login persistence check
-  auth.onAuthStateChanged((user) => {
+  // --- Auth Check ---
+  onAuthStateChanged(auth, user => {
     if (user) {
-      console.log("Logged in as:", user.email);
+      currentUser = user;
+      document.cookie = "loggedIn=true; path=/";
+      get(ref(db, "users/" + user.uid + "/rfid")).then(snapshot => {
+        if (!snapshot.exists()) document.getElementById("rfidSection").style.display = "block";
+      });
     } else {
-      console.log("Not logged in.");
+      document.cookie = "loggedIn=false; path=/";
+      window.location.href = "login.html";
     }
   });
+
+  // --- RFID Linking via QR ---
+  window.openRFIDModal = function () {
+    document.getElementById("rfidModal").style.display = "flex";
+    const qrReader = new Html5Qrcode("qr-reader");
+    qrReader.start(
+      { facingMode: "environment" },
+      { fps: 10, qrbox: 250 },
+      async (decodedText) => {
+        if (!decodedText || !currentUser) return;
+        const uid = decodedText;
+        try {
+          const unlinkedRef = ref(db, `unlinked_uids/${uid}`);
+          const linkedRef   = ref(db, `linked_uids/${uid}`);
+          const accountRef  = ref(db, `users/${currentUser.uid}`);
+          const unlinkedSnap = await get(unlinkedRef);
+          const uidData = unlinkedSnap.exists() ? unlinkedSnap.val() : { points: 0 };
+          const accountSnap = await get(accountRef);
+          const accountData = accountSnap.exists() ? accountSnap.val() : { name: currentUser.displayName || "User", email: currentUser.email };
+          await set(linkedRef, { ...accountData, points: uidData.points || 0 });
+          if (unlinkedSnap.exists()) await set(unlinkedRef, null);
+          await set(ref(db, `rfid_to_user/${uid}`), currentUser.uid);
+          await set(ref(db, `users/${currentUser.uid}/rfid`), uid);
+          qrReader.stop();
+          closeRFIDModal();
+          document.getElementById("rfidSection").style.display = "none";
+          alert(`RFID ${uid} linked to your account!`);
+        } catch (err) {
+          console.error("RFID Linking Error:", err);
+          alert("Error while linking RFID. Check console.");
+        }
+      },
+      (errorMessage) => {}
+    );
+  };
+
+  window.closeRFIDModal = function () {
+    document.getElementById("rfidModal").style.display = "none";
+    document.getElementById("qr-reader").innerHTML = "";
+  };
+
+  // --- Dashboard Table ---
+  const dashboardTable = document.getElementById("dashboardTable");
+  onValue(ref(db, "unlinked_uids"), snapshot => {
+    const data = snapshot.val() || {};
+    dashboardTable.innerHTML = `<tr><th>UID</th><th>Points</th></tr>`;
+    for (let uid in data) {
+      const row = document.createElement("tr");
+      row.innerHTML = `<td>${uid}</td><td>${data[uid].points || 0}</td>`;
+      dashboardTable.appendChild(row);
+    }
+  });
+
+  // --- Leaderboard Table ---
+  const leaderboardTable = document.getElementById("leaderboardTable");
+  onValue(ref(db, "linked_uids"), snapshot => {
+    const users = snapshot.val() || {};
+    leaderboardTable.innerHTML = `<tr><th>Name</th><th>Points</th></tr>`;
+    Object.values(users)
+      .sort((a,b) => (b.points || 0) - (a.points || 0))
+      .forEach(user => {
+        const row = document.createElement("tr");
+        row.innerHTML = `<td>${user.name}</td><td>${user.points || 0}</td>`;
+        leaderboardTable.appendChild(row);
+      });
+  });
+
+  // --- Logout ---
+  window.logout = function () {
+    signOut(auth).then(() => {
+      document.cookie = "loggedIn=false; path=/";
+      window.location.href = "login.html";
+    });
+  };
+
+  // --- Mobile Nav & Settings ---
+  window.toggleMobileNav = () => document.getElementById("mobileDropdown").classList.toggle("show");
+  window.toggleSettings = () => document.getElementById("settingsPanel").classList.toggle("show");
 </script>
 
 </body>
