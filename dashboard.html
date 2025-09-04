@@ -255,25 +255,55 @@
       async (decodedText) => {
 if (decodedText && currentUser) {
   const uid = decodedText;
+  console.log("Scanned UID:", uid);
 
-  // references
-  const unlinkedRef = ref(db, `unlinked_uids/${uid}`);
-  const linkedRef   = ref(db, `linked_uids/${uid}`);
-  const accountRef  = ref(db, `accounts/${currentUser.uid}`);
+  try {
+    // references
+    const unlinkedRef = ref(db, `unlinked_uids/${uid}`);
+    const linkedRef   = ref(db, `linked_uids/${uid}`);
+    const accountRef  = ref(db, `accounts/${currentUser.uid}`);
 
-  // get unlinked UID data (points)
-  const unlinkedSnap = await get(unlinkedRef);
-  const uidData = unlinkedSnap.exists() ? unlinkedSnap.val() : { points: 0 };
+    console.log("Fetching unlinked UID data...");
+    const unlinkedSnap = await get(unlinkedRef);
+    console.log("Unlinked data:", unlinkedSnap.val());
 
-  // get account data
-  const accountSnap = await get(accountRef);
-  const accountData = accountSnap.exists() ? accountSnap.val() : { name: currentUser.displayName || "User", email: currentUser.email };
+    const uidData = unlinkedSnap.exists() ? unlinkedSnap.val() : { points: 0 };
 
-  // create linked entry
-  await set(linkedRef, {
-    ...accountData,
-    points: uidData.points || 0
-  });
+    console.log("Fetching account data...");
+    const accountSnap = await get(accountRef);
+    console.log("Account data:", accountSnap.val());
+
+    const accountData = accountSnap.exists()
+      ? accountSnap.val()
+      : { name: currentUser.displayName || "User", email: currentUser.email };
+
+    console.log("Writing to linked_uids...");
+    await set(linkedRef, {
+      ...accountData,
+      points: uidData.points || 0
+    });
+
+    console.log("Removing from unlinked...");
+    if (unlinkedSnap.exists()) {
+      await set(unlinkedRef, null);
+    }
+
+    console.log("Saving user mappings...");
+    await set(ref(db, `rfid_to_user/${uid}`), currentUser.uid);
+    await set(ref(db, `users/${currentUser.uid}/rfid`), uid);
+
+    console.log("✅ Linking complete");
+    qrReader.stop();
+    closeRFIDModal();
+    document.getElementById("rfidSection").style.display = "none";
+    alert(`RFID ${uid} linked to your account!`);
+
+  } catch (err) {
+    console.error("❌ Error linking UID:", err);
+    alert("Error while linking RFID. Check console for details.");
+  }
+}
+;
 
   // remove from unlinked
   if (unlinkedSnap.exists()) {
