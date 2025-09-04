@@ -253,13 +253,43 @@
       { facingMode: "environment" },
       { fps: 10, qrbox: 250 },
       async (decodedText) => {
-        if (decodedText && currentUser) {
-          await set(ref(db, `users/${currentUser.uid}/rfid`), decodedText);
-          await set(ref(db, `rfid_to_user/${decodedText}`), currentUser.uid);
-          qrReader.stop();
-          closeRFIDModal();
-          document.getElementById("rfidSection").style.display = "none";
-        }
+if (decodedText && currentUser) {
+  const uid = decodedText;
+
+  // references
+  const unlinkedRef = ref(db, `unlinked_uids/${uid}`);
+  const linkedRef   = ref(db, `linked_uids/${uid}`);
+  const accountRef  = ref(db, `accounts/${currentUser.uid}`);
+
+  // get unlinked UID data (points)
+  const unlinkedSnap = await get(unlinkedRef);
+  const uidData = unlinkedSnap.exists() ? unlinkedSnap.val() : { points: 0 };
+
+  // get account data
+  const accountSnap = await get(accountRef);
+  const accountData = accountSnap.exists() ? accountSnap.val() : { name: currentUser.displayName || "User", email: currentUser.email };
+
+  // create linked entry
+  await set(linkedRef, {
+    ...accountData,
+    points: uidData.points || 0
+  });
+
+  // remove from unlinked
+  if (unlinkedSnap.exists()) {
+    await set(unlinkedRef, null);
+  }
+
+  // also store mapping for quick lookup
+  await set(ref(db, `rfid_to_user/${uid}`), currentUser.uid);
+  await set(ref(db, `users/${currentUser.uid}/rfid`), uid);
+
+  qrReader.stop();
+  closeRFIDModal();
+  document.getElementById("rfidSection").style.display = "none";
+  alert(`RFID ${uid} linked to your account!`);
+}
+
       },
       (errorMessage) => {}
     );
