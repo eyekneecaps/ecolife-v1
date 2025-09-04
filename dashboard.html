@@ -212,13 +212,14 @@
   </div>
 </div>
 
-<!-- Firebase & QR Logic -->
-  <!-- Firebase App (always required) -->
+<!-- Firebase SDKs -->
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js"></script>
+<script src="https://unpkg.com/html5-qrcode/minified/html5-qrcode.min.js"></script>
 
 <script>
+  // ✅ Your Firebase config (replace with your own values from Firebase Console)
   const firebaseConfig = {
     apiKey: "YOUR_API_KEY",
     authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
@@ -229,183 +230,84 @@
     appId: "YOUR_APP_ID"
   };
 
-  // Initialize Firebase
+  // ✅ Initialize Firebase
   const app = firebase.initializeApp(firebaseConfig);
   const auth = firebase.auth();
   const db = firebase.database();
-</script>
 
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
-  import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+  // ✅ RFID Linking Function
+  async function linkRFID(uid) {
+    const user = auth.currentUser;
+    if (!user) {
+      alert("You must be logged in to link RFID");
+      return;
+    }
 
-  const firebaseConfig = {
-    apiKey: "AIzaSyDW5APPZMu-lojVRNg89ZDBEY14YD77xd4",
-    authDomain: "ecolife--v1.firebaseapp.com",
-    databaseURL: "https://ecolife--v1-default-rtdb.europe-west1.firebasedatabase.app",
-    projectId: "ecolife--v1"
-  };
+    const userRef = db.ref("users/" + user.uid);
 
-  const app = initializeApp(firebaseConfig);
-  const db = getDatabase(app);
-  const auth = getAuth(app);
-  let currentUser;
+    try {
+      // get unlinked UID data
+      const unlinkedRef = db.ref("unlinked_uids/" + uid);
+      const snapshot = await unlinkedRef.get();
 
-  onAuthStateChanged(auth, user => {
-    if (user) {
-      currentUser = user;
-      document.cookie = "loggedIn=true; path=/";
-      get(ref(db, "users/" + user.uid + "/rfid")).then(snapshot => {
-        if (!snapshot.exists()) {
-          document.getElementById("rfidSection").style.display = "block";
-          document.getElementById("linkRFIDOption").style.display = "block";
-        }
+      let points = 0;
+      if (snapshot.exists()) {
+        points = snapshot.val().points || 0;
+      }
+
+      // save into linked_uids
+      const accountData = (await userRef.get()).val() || {};
+      await db.ref("linked_uids/" + uid).set({
+        name: accountData.name || "Unnamed",
+        email: accountData.email || "No email",
+        points: points
       });
+
+      // update user profile with RFID
+      await userRef.update({ rfid: uid });
+
+      // create reverse mapping
+      await db.ref("rfid_to_user/" + uid).set(user.uid);
+
+      // remove from unlinked
+      await unlinkedRef.remove();
+
+      alert("RFID Linked Successfully!");
+    } catch (err) {
+      console.error("RFID Linking Error:", err);
+      alert("Error linking RFID. Check console.");
+    }
+  }
+
+  // ✅ QR Scanner Setup
+  function startQRScanner() {
+    const html5QrCode = new Html5Qrcode("qr-reader");
+    const qrConfig = { fps: 10, qrbox: 250 };
+
+    html5QrCode.start(
+      { facingMode: "environment" },
+      qrConfig,
+      (decodedText) => {
+        html5QrCode.stop().then(() => {
+          console.log("Scanned UID:", decodedText);
+          linkRFID(decodedText);
+        }).catch(err => console.error("Stop failed:", err));
+      },
+      (errorMessage) => {
+        console.warn("QR scan error:", errorMessage);
+      }
+    ).catch(err => console.error("Unable to start scanner:", err));
+  }
+
+  // ✅ Auto-login persistence check
+  auth.onAuthStateChanged((user) => {
+    if (user) {
+      console.log("Logged in as:", user.email);
     } else {
-      document.cookie = "loggedIn=false; path=/";
-      window.location.href = "login.html";
+      console.log("Not logged in.");
     }
   });
-
-  window.openRFIDModal = function () {
-    document.getElementById("rfidModal").style.display = "flex";
-    const qrReader = new Html5Qrcode("qr-reader");
-    qrReader.start(
-      { facingMode: "environment" },
-      { fps: 10, qrbox: 250 },
-      async (decodedText) => {
-if (decodedText && currentUser) {
-  const uid = decodedText;
-  console.log("Scanned UID:", uid);
-
-  try {
-    // references
-    const unlinkedRef = ref(db, `unlinked_uids/${uid}`);
-    const linkedRef   = ref(db, `linked_uids/${uid}`);
-    const accountRef  = ref(db, `accounts/${currentUser.uid}`);
-
-    console.log("Fetching unlinked UID data...");
-    const unlinkedSnap = await get(unlinkedRef);
-    console.log("Unlinked data:", unlinkedSnap.val());
-
-    const uidData = unlinkedSnap.exists() ? unlinkedSnap.val() : { points: 0 };
-
-    console.log("Fetching account data...");
-    const accountSnap = await get(accountRef);
-    console.log("Account data:", accountSnap.val());
-
-    const accountData = accountSnap.exists()
-      ? accountSnap.val()
-      : { name: currentUser.displayName || "User", email: currentUser.email };
-
-    console.log("Writing to linked_uids...");
-    await set(linkedRef, {
-      ...accountData,
-      points: uidData.points || 0
-    });
-
-    console.log("Removing from unlinked...");
-    if (unlinkedSnap.exists()) {
-      await set(unlinkedRef, null);
-    }
-
-    console.log("Saving user mappings...");
-    await set(ref(db, `rfid_to_user/${uid}`), currentUser.uid);
-    await set(ref(db, `users/${currentUser.uid}/rfid`), uid);
-
-    console.log("✅ Linking complete");
-    qrReader.stop();
-    closeRFIDModal();
-    document.getElementById("rfidSection").style.display = "none";
-    alert(`RFID ${uid} linked to your account!`);
-
-  } catch (err) {
-    console.error("❌ Error linking UID:", err);
-    alert("Error while linking RFID. Check console for details.");
-  }
-}
-;
-
-  // remove from unlinked
-  if (unlinkedSnap.exists()) {
-    await set(unlinkedRef, null);
-  }
-
-  // also store mapping for quick lookup
-  await set(ref(db, `rfid_to_user/${uid}`), currentUser.uid);
-  await set(ref(db, `users/${currentUser.uid}/rfid`), uid);
-
-  qrReader.stop();
-  closeRFIDModal();
-  document.getElementById("rfidSection").style.display = "none";
-  alert(`RFID ${uid} linked to your account!`);
-}
-
-      },
-      (errorMessage) => {}
-    );
-  };
-
-  window.closeRFIDModal = function () {
-    document.getElementById("rfidModal").style.display = "none";
-    document.getElementById("qr-reader").innerHTML = "";
-  };
 </script>
 
-<!-- UI Logic -->
-<script>
-  const isLoggedIn = document.cookie.includes("loggedIn=true");
-  document.getElementById("signupLink").style.display = isLoggedIn ? "none" : "inline";
-  document.getElementById("loginLink").style.display = isLoggedIn ? "none" : "inline";
-  document.getElementById("signupLinkMobile").style.display = isLoggedIn ? "none" : "block";
-  document.getElementById("loginLinkMobile").style.display = isLoggedIn ? "none" : "block";
-
-  function toggleSettings() {
-    document.getElementById("settingsPanel").classList.toggle("show");
-  }
-
-  function toggleMobileNav() {
-    document.getElementById("mobileDropdown").classList.toggle("show");
-  }
-
-  function logout() {
-    document.cookie = "loggedIn=false; path=/";
-    window.location.href = "login.html";
-  }
-</script>
- <script>
-  // REFERENCE TO DATABASE
-const db = firebase.database();
-
-// Display all UIDs (linked & unlinked) in a table
-const dashboardTable = document.getElementById("dashboardTable"); // make sure this table exists in HTML
-db.ref("uids").on("value", snapshot => {
-  const data = snapshot.val() || {};
-  dashboardTable.innerHTML = `<tr><th>UID</th><th>Name</th><th>Points</th></tr>`;
-  for (let uid in data) {
-    const name = data[uid].name || "N/A"; // shows N/A if not linked
-    const points = data[uid].points || 0;
-    const row = document.createElement("tr");
-    row.innerHTML = `<td>${uid}</td><td>${name}</td><td>${points}</td>`;
-    dashboardTable.appendChild(row);
-  }
-});
-
-// Leaderboard for linked users only
-const leaderboardTable = document.getElementById("leaderboardTable"); // make sure this table exists
-db.ref("users").on("value", snapshot => {
-  const users = snapshot.val() || {};
-  leaderboardTable.innerHTML = `<tr><th>Name</th><th>Points</th></tr>`;
-  Object.values(users)
-    .sort((a,b) => (b.points || 0) - (a.points || 0))
-    .forEach(user => {
-      const row = document.createElement("tr");
-      row.innerHTML = `<td>${user.name}</td><td>${user.points || 0}</td>`;
-      leaderboardTable.appendChild(row);
-    });
-});
- 
-</script>
 </body>
 </html>
