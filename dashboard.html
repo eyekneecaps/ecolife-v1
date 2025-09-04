@@ -97,12 +97,11 @@
   </div>
 </div>
 
-<!-- HTML5 QRCode library -->
 <script type="module">
-  // ✅ Import Html5Qrcode first
+  // --- Import Html5Qrcode module ---
   import { Html5Qrcode } from "https://unpkg.com/html5-qrcode?module";
 
-  // ✅ Import Firebase modules
+  // --- Import Firebase modules ---
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
   import { getDatabase, ref, get, set, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
   import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
@@ -121,12 +120,12 @@
   const auth = getAuth(app);
   let currentUser;
 
-  // --- Auth check ---
+  // --- Auth Check ---
   onAuthStateChanged(auth, user => {
     if (user) {
       currentUser = user;
       document.cookie = "loggedIn=true; path=/";
-      get(ref(db, "users/" + user.uid + "/rfid")).then(snapshot => {
+      get(ref(db, `users/${user.uid}/rfid`)).then(snapshot => {
         if (!snapshot.exists()) document.getElementById("rfidSection").style.display = "block";
       });
     } else {
@@ -135,29 +134,41 @@
     }
   });
 
-  // --- RFID Linking via QR ---
+  // --- Open RFID Modal & Start QR Scanner ---
   window.openRFIDModal = function () {
-    document.getElementById("rfidModal").style.display = "flex";
-    const qrReader = new Html5Qrcode("qr-reader"); // ✅ Now works
-    qrReader.start(
+    const modal = document.getElementById("rfidModal");
+    const qrReaderDiv = document.getElementById("qr-reader");
+
+    modal.style.display = "flex";
+    qrReaderDiv.innerHTML = ""; // Clear any old content
+
+    const qrScanner = new Html5Qrcode("qr-reader");
+    qrScanner.start(
       { facingMode: "environment" },
       { fps: 10, qrbox: 250 },
-      async (decodedText) => {
+      async decodedText => {
         if (!decodedText || !currentUser) return;
         const uid = decodedText;
+
         try {
           const unlinkedRef = ref(db, `unlinked_uids/${uid}`);
-          const linkedRef   = ref(db, `linked_uids/${uid}`);
-          const accountRef  = ref(db, `users/${currentUser.uid}`);
+          const linkedRef = ref(db, `linked_uids/${uid}`);
+          const accountRef = ref(db, `users/${currentUser.uid}`);
+
           const unlinkedSnap = await get(unlinkedRef);
           const uidData = unlinkedSnap.exists() ? unlinkedSnap.val() : { points: 0 };
+
           const accountSnap = await get(accountRef);
-          const accountData = accountSnap.exists() ? accountSnap.val() : { name: currentUser.displayName || "User", email: currentUser.email };
+          const accountData = accountSnap.exists()
+            ? accountSnap.val()
+            : { name: currentUser.displayName || "User", email: currentUser.email };
+
           await set(linkedRef, { ...accountData, points: uidData.points || 0 });
           if (unlinkedSnap.exists()) await set(unlinkedRef, null);
           await set(ref(db, `rfid_to_user/${uid}`), currentUser.uid);
           await set(ref(db, `users/${currentUser.uid}/rfid`), uid);
-          qrReader.stop();
+
+          await qrScanner.stop();
           closeRFIDModal();
           document.getElementById("rfidSection").style.display = "none";
           alert(`RFID ${uid} linked to your account!`);
@@ -166,15 +177,19 @@
           alert("Error while linking RFID. Check console.");
         }
       },
-      (errorMessage) => {}
+      errorMessage => {
+        // Optional: handle scan errors here
+      }
     );
   };
 
+  // --- Close RFID Modal ---
   window.closeRFIDModal = function () {
-    document.getElementById("rfidModal").style.display = "none";
-    document.getElementById("qr-reader").innerHTML = "";
+    const modal = document.getElementById("rfidModal");
+    const qrReaderDiv = document.getElementById("qr-reader");
+    modal.style.display = "none";
+    qrReaderDiv.innerHTML = "";
   };
-
 
   // --- Dashboard Table ---
   const dashboardTable = document.getElementById("dashboardTable");
@@ -194,7 +209,7 @@
     const users = snapshot.val() || {};
     leaderboardTable.innerHTML = `<tr><th>Name</th><th>Points</th></tr>`;
     Object.values(users)
-      .sort((a,b) => (b.points || 0) - (a.points || 0))
+      .sort((a, b) => (b.points || 0) - (a.points || 0))
       .forEach(user => {
         const row = document.createElement("tr");
         row.innerHTML = `<td>${user.name}</td><td>${user.points || 0}</td>`;
