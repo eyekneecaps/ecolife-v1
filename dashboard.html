@@ -102,7 +102,10 @@
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
   import { getDatabase, ref, get, set, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
   import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-  import QrScanner from "https://cdn.jsdelivr.net/npm/qr-scanner@1.4.2/qr-scanner.min.js";
+
+  // --- Import QR Scanner ---
+  import QrScanner from "https://unpkg.com/qr-scanner/qr-scanner.min.js";
+  QrScanner.WORKER_PATH = "https://unpkg.com/qr-scanner/qr-scanner-worker.min.js";
 
   // --- Firebase Config ---
   const firebaseConfig = {
@@ -117,7 +120,6 @@
   const db = getDatabase(app);
   const auth = getAuth(app);
   let currentUser;
-  let qrScanner;
 
   // --- Auth Check ---
   onAuthStateChanged(auth, user => {
@@ -134,65 +136,70 @@
   });
 
   // --- Open RFID Modal & Start QR Scanner ---
+  let qrScannerInstance = null;
   window.openRFIDModal = function () {
     const modal = document.getElementById("rfidModal");
     const qrReaderDiv = document.getElementById("qr-reader");
 
     modal.style.display = "flex";
-    qrReaderDiv.innerHTML = ""; // Clear old content
+    qrReaderDiv.innerHTML = ""; // clear old content
 
-    const video = document.createElement("video");
-    video.style.width = "100%";
-    qrReaderDiv.appendChild(video);
+    const videoElem = document.createElement("video");
+    videoElem.style.width = "100%";
+    qrReaderDiv.appendChild(videoElem);
 
-    qrScanner = new QrScanner(video, async result => {
-      if (!result || !currentUser) return;
-      const uid = result.data;
+    qrScannerInstance = new QrScanner(
+      videoElem,
+      async result => {
+        if (!result || !currentUser) return;
+        const uid = result.data; // future-proof with returnDetailedScanResult
 
-      try {
-        const unlinkedRef = ref(db, `unlinked_uids/${uid}`);
-        const linkedRef = ref(db, `linked_uids/${uid}`);
-        const accountRef = ref(db, `users/${currentUser.uid}`);
+        try {
+          const unlinkedRef = ref(db, `unlinked_uids/${uid}`);
+          const linkedRef = ref(db, `linked_uids/${uid}`);
+          const accountRef = ref(db, `users/${currentUser.uid}`);
 
-        const unlinkedSnap = await get(unlinkedRef);
-        const uidData = unlinkedSnap.exists() ? unlinkedSnap.val() : { points: 0 };
+          const unlinkedSnap = await get(unlinkedRef);
+          const uidData = unlinkedSnap.exists() ? unlinkedSnap.val() : { points: 0 };
 
-        const accountSnap = await get(accountRef);
-        const accountData = accountSnap.exists()
-          ? accountSnap.val()
-          : { name: currentUser.displayName || "User", email: currentUser.email };
+          const accountSnap = await get(accountRef);
+          const accountData = accountSnap.exists()
+            ? accountSnap.val()
+            : { name: currentUser.displayName || "User", email: currentUser.email };
 
-        await set(linkedRef, { ...accountData, points: uidData.points || 0 });
-        if (unlinkedSnap.exists()) await set(unlinkedRef, null);
-        await set(ref(db, `rfid_to_user/${uid}`), currentUser.uid);
-        await set(ref(db, `users/${currentUser.uid}/rfid`), uid);
+          await set(linkedRef, { ...accountData, points: uidData.points || 0 });
+          if (unlinkedSnap.exists()) await set(unlinkedRef, null);
+          await set(ref(db, `rfid_to_user/${uid}`), currentUser.uid);
+          await set(ref(db, `users/${currentUser.uid}/rfid`), uid);
 
-        qrScanner.stop();
-        closeRFIDModal();
-        document.getElementById("rfidSection").style.display = "none";
-        alert(`RFID ${uid} linked to your account!`);
-      } catch (err) {
-        console.error("RFID Linking Error:", err);
-        alert("Error while linking RFID. Check console.");
+          qrScannerInstance.stop();
+          closeRFIDModal();
+          document.getElementById("rfidSection").style.display = "none";
+          alert(`RFID ${uid} linked to your account!`);
+        } catch (err) {
+          console.error("RFID Linking Error:", err);
+          alert("Error while linking RFID. Check console.");
+        }
+      },
+      {
+        returnDetailedScanResult: true,
+        highlightScanRegion: true,
+        highlightCodeOutline: true
       }
-    });
+    );
 
-    qrScanner.start();
+    qrScannerInstance.start().catch(err => {
+      console.error("Failed to start QR scanner:", err);
+      alert("Cannot access camera. Check permissions.");
+    });
   };
 
   // --- Close RFID Modal ---
   window.closeRFIDModal = function () {
     const modal = document.getElementById("rfidModal");
-    const qrReaderDiv = document.getElementById("qr-reader");
-
     modal.style.display = "none";
-    qrReaderDiv.innerHTML = "";
-
-    if (qrScanner) {
-      qrScanner.stop();
-      qrScanner.destroy();
-      qrScanner = null;
-    }
+    if (qrScannerInstance) qrScannerInstance.stop();
+    document.getElementById("qr-reader").innerHTML = "";
   };
 
   // --- Dashboard Table ---
@@ -213,7 +220,7 @@
     const users = snapshot.val() || {};
     leaderboardTable.innerHTML = `<tr><th>Name</th><th>Points</th></tr>`;
     Object.values(users)
-      .sort((a, b) => (b.points || 0) - (a.points || 0))
+      .sort((a,b) => (b.points || 0) - (a.points || 0))
       .forEach(user => {
         const row = document.createElement("tr");
         row.innerHTML = `<td>${user.name}</td><td>${user.points || 0}</td>`;
@@ -233,7 +240,6 @@
   window.toggleMobileNav = () => document.getElementById("mobileDropdown").classList.toggle("show");
   window.toggleSettings = () => document.getElementById("settingsPanel").classList.toggle("show");
 </script>
-
 
 </body>
 </html>
