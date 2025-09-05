@@ -97,10 +97,10 @@
   </div>
 </div>
 
-<script type="module">
   // --- Import Html5Qrcode module ---
-  import { Html5Qrcode } from "https://unpkg.com/html5-qrcode?module";
+<script src="https://unpkg.com/html5-qrcode/minified/html5-qrcode.min.js"></script>
 
+<script type="module">
   // --- Import Firebase modules ---
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
   import { getDatabase, ref, get, set, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
