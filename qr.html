@@ -2,34 +2,18 @@
 <html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8">
-  <title>RFID QR Generator</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="../style.css">
-  <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+  <title>Generate QR</title>
   <style>
-    .qr-container {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      min-height: 100vh;
-      text-align: center;
-    }
-    canvas {
-      margin-top: 1rem;
-    }
+    body { background-color: #111; color: white; font-family: sans-serif; text-align: center; padding: 2rem; }
+    #qrCode { margin-top: 2rem; }
+    input, button { padding: 0.5rem 1rem; margin-top: 1rem; font-size: 1rem; }
+    button { cursor: pointer; background-color: #073763; color: white; border: none; border-radius: 6px; }
   </style>
-</head>
-<body>
-  <div class="qr-container">
-    <h1>Scan to Link RFID</h1>
-    <canvas id="qrCanvas"></canvas>
-    <p id="rfidText" style="margin-top: 1rem; font-size: 1.2rem;"></p>
-  </div>
-
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-    import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+    import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+    import QRCode from "https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyDW5APPZMu-lojVRNg89ZDBEY14YD77xd4",
@@ -41,37 +25,45 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
-    const qrCanvas = document.getElementById('qrCanvas');
-    const rfidText = document.getElementById('rfidText');
+    // --- Select HTML elements ---
+    const qrContainer = document.getElementById("qrCode");
+    const uidInput = document.getElementById("uidInput");
+    const generateBtn = document.getElementById("generateBtn");
 
-    function generateQR(uid) {
-      rfidText.textContent = `RFID UID: ${uid}`;
-      QRCode.toCanvas(qrCanvas, uid, { width: 250 }, error => {
-        if (error) console.error(error);
-      });
+    // --- Generate QR Function ---
+    async function generateQR(uid) {
+      if (!uid) return;
+      qrContainer.innerHTML = ""; // clear old QR
+      try {
+        const qrData = uid; // You can include JSON here if needed
+        QRCode.toCanvas(qrContainer, qrData, { width: 300, color: { dark: "#073763", light: "#111" } });
+      } catch (err) {
+        console.error("QR Generation Error:", err);
+      }
     }
 
-    // Show example QR for 192.168.68.100
-    const ipExample = "103.70.197.81";
-    fetch("https://api.ipify.org?format=json")
-      .then(res => res.json())
-      .then(data => {
-        if (data.ip === ipExample) {
-          generateQR("RFID-EXAMPLE-1234");
-        } else {
-          const uidRef = ref(db, "qr_uid/current");
-          onValue(uidRef, async (snapshot) => {
-            const uid = snapshot.val();
-            if (uid) {
-              generateQR(uid);
-              await set(uidRef, null); // Clear the UID after generating QR
-            }
-          });
-        }
-      })
-      .catch(err => {
-        console.error("IP check failed", err);
-      });
+    // --- Handle manual UID input ---
+    generateBtn.addEventListener("click", () => {
+      const uid = uidInput.value.trim();
+      generateQR(uid);
+    });
+
+    // --- Auto-generate latest UID from Firebase ---
+    onValue(ref(db, "unlinked_uids"), snapshot => {
+      const data = snapshot.val();
+      if (!data) return;
+      const latestUID = Object.keys(data)[Object.keys(data).length - 1];
+      generateQR(latestUID);
+      uidInput.value = latestUID;
+    });
+
   </script>
+</head>
+<body>
+  <h1>RFID QR Code Generator</h1>
+  <p>Scan this QR code to link your RFID card to the dashboard.</p>
+  <input type="text" id="uidInput" placeholder="Enter UID manually if needed">
+  <button id="generateBtn">Generate QR</button>
+  <div id="qrCode"></div>
 </body>
 </html>
