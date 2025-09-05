@@ -186,11 +186,12 @@
   <ul id="leaderboardList">Loading...</ul>
 </div>
 
-<!-- Firebase Leaderboard Logic -->
 <script type="module">
+  // --- Firebase Imports ---
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+  import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
+  // --- Firebase Config ---
   const firebaseConfig = {
     apiKey: "AIzaSyDW5APPZMu-lojVRNg89ZDBEY14YD77xd4",
     authDomain: "ecolife--v1.firebaseapp.com",
@@ -198,100 +199,73 @@
     projectId: "ecolife--v1"
   };
 
+  // --- Initialize Firebase ---
   const app = initializeApp(firebaseConfig);
   const db = getDatabase(app);
 
-  async function loadLeaderboard() {
-    const snap = await get(ref(db, "users/"));
-    const leaderboardList = document.getElementById("leaderboardList");
-
-    if (snap.exists()) {
-      const users = snap.val();
-      const sorted = Object.entries(users).sort((a, b) => (b[1].points || 0) - (a[1].points || 0));
-      leaderboardList.innerHTML = "";
-      sorted.forEach(([uid, user], index) => {
-        const name = user.name || "Unnamed";
-        const points = user.points || 0;
-        const trophy = index === 0 ? " 🥇" : index === 1 ? " 🥈" : index === 2 ? " 🥉" : "";
-        leaderboardList.innerHTML += `
-          <li>
-            <span class="rank">#${index + 1}${trophy}</span> ${name}
-            <span>${points} pts</span>
-          </li>`;
-      });
-    } else {
-      leaderboardList.innerHTML = "<li>No users found.</li>";
+  // --- Dashboard Table (all UIDs) ---
+  const dashboardTable = document.getElementById("dashboardTable");
+  onValue(ref(db, "uids"), snapshot => {
+    const data = snapshot.val() || {};
+    dashboardTable.innerHTML = `<tr><th>UID</th><th>Name</th><th>Points</th></tr>`;
+    for (let uid in data) {
+      const name = data[uid].name || "N/A";
+      const points = data[uid].points || 0;
+      const row = document.createElement("tr");
+      row.innerHTML = `<td>${uid}</td><td>${name}</td><td>${points}</td>`;
+      dashboardTable.appendChild(row);
     }
-  }
+  });
 
-  loadLeaderboard();
-</script>
+  // --- Leaderboard Table (linked users) ---
+  const leaderboardTable = document.getElementById("leaderboardTable");
+  onValue(ref(db, "users"), snapshot => {
+    const users = snapshot.val() || {};
+    leaderboardTable.innerHTML = `<tr><th>Name</th><th>Points</th></tr>`;
+    Object.values(users)
+      .sort((a, b) => (b.points || 0) - (a.points || 0))
+      .forEach((user, index) => {
+        const row = document.createElement("tr");
+        const trophy = index === 0 ? " 🥇" : index === 1 ? " 🥈" : index === 2 ? " 🥉" : "";
+        row.innerHTML = `<td>${user.name || "Unnamed"}${trophy}</td><td>${user.points || 0}</td>`;
+        leaderboardTable.appendChild(row);
+      });
+  });
 
-<!-- Navbar Behavior -->
-<script>
+  // --- Navbar Behavior ---
   const isLoggedIn = document.cookie.includes("loggedIn=true");
 
-  document.getElementById("signupLink").style.display = isLoggedIn ? "none" : "inline";
-  document.getElementById("loginLink").style.display = isLoggedIn ? "none" : "inline";
+  const showOrHide = (id, show) => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = show ? "inline" : "none";
+  };
 
-  document.getElementById("signupLinkMobile").style.display = isLoggedIn ? "none" : "block";
-  document.getElementById("loginLinkMobile").style.display = isLoggedIn ? "none" : "block";
+  showOrHide("signupLink", !isLoggedIn);
+  showOrHide("loginLink", !isLoggedIn);
+  showOrHide("signupLinkMobile", !isLoggedIn);
+  showOrHide("loginLinkMobile", !isLoggedIn);
 
-  function toggleSettings() {
-    document.getElementById("settingsPanel").classList.toggle("show");
-  }
+  window.toggleSettings = () => document.getElementById("settingsPanel")?.classList.toggle("show");
+  window.toggleMobileNav = () => document.getElementById("mobileDropdown")?.classList.toggle("show");
 
-  function toggleMobileNav() {
-    document.getElementById("mobileDropdown").classList.toggle("show");
-  }
-
-  function logout() {
+  window.logout = () => {
     document.cookie = "loggedIn=false; path=/";
     window.location.href = "login.html";
-  }
+  };
 
-  function checkLogin(e) {
+  window.checkLogin = (e) => {
     if (!isLoggedIn) {
       e.preventDefault();
       const popup = document.getElementById("popupMessage");
-      popup.style.display = "block";
-      setTimeout(() => popup.style.display = "none", 5000);
+      if (popup) {
+        popup.style.display = "block";
+        setTimeout(() => popup.style.display = "none", 5000);
+      }
     }
-  }
+  };
 </script>
- <script>
-  // REFERENCE TO DATABASE
-const db = firebase.database();
 
-// Display all UIDs (linked & unlinked) in a table
-const dashboardTable = document.getElementById("dashboardTable"); // make sure this table exists in HTML
-db.ref("uids").on("value", snapshot => {
-  const data = snapshot.val() || {};
-  dashboardTable.innerHTML = `<tr><th>UID</th><th>Name</th><th>Points</th></tr>`;
-  for (let uid in data) {
-    const name = data[uid].name || "N/A"; // shows N/A if not linked
-    const points = data[uid].points || 0;
-    const row = document.createElement("tr");
-    row.innerHTML = `<td>${uid}</td><td>${name}</td><td>${points}</td>`;
-    dashboardTable.appendChild(row);
-  }
-});
-
-// Leaderboard for linked users only
-const leaderboardTable = document.getElementById("leaderboardTable"); // make sure this table exists
-db.ref("users").on("value", snapshot => {
-  const users = snapshot.val() || {};
-  leaderboardTable.innerHTML = `<tr><th>Name</th><th>Points</th></tr>`;
-  Object.values(users)
-    .sort((a,b) => (b.points || 0) - (a.points || 0))
-    .forEach(user => {
-      const row = document.createElement("tr");
-      row.innerHTML = `<td>${user.name}</td><td>${user.points || 0}</td>`;
-      leaderboardTable.appendChild(row);
-    });
-});
- 
-</script>
 </body>
 </html>
+
 
