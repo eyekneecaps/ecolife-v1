@@ -83,10 +83,12 @@
 </div>
 
 <script type="module">
+  // --- Firebase Imports ---
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
   import { getAuth, createUserWithEmailAndPassword, updateProfile } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-  import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+  import { getDatabase, ref, set, onValue, update } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
+  // --- Firebase Config ---
   const firebaseConfig = {
     apiKey: "AIzaSyDW5APPZMu-lojVRNg89ZDBEY14YD77xd4",
     authDomain: "ecolife--v1.firebaseapp.com",
@@ -94,10 +96,23 @@
     projectId: "ecolife--v1"
   };
 
+  // --- Initialize Firebase ---
   const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
   const db = getDatabase(app);
 
+  // --- Navbar Login State ---
+  const isLoggedIn = document.cookie.includes("loggedIn=true");
+  const showOrHide = (id, show) => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = show ? "inline" : "none";
+  };
+  showOrHide("signupLink", !isLoggedIn);
+  showOrHide("loginLink", !isLoggedIn);
+  showOrHide("signupLinkMobile", !isLoggedIn);
+  showOrHide("loginLinkMobile", !isLoggedIn);
+
+  // --- Password Validation ---
   const passwordInput = document.getElementById("signupPassword");
   passwordInput.addEventListener("input", () => {
     const val = passwordInput.value;
@@ -107,6 +122,7 @@
     document.getElementById("ruleSpecial").innerText = /[^A-Za-z0-9]/.test(val) ? "✅ At least one special character" : "❌ At least one special character";
   });
 
+  // --- Signup Form Submit ---
   document.getElementById("signupForm").addEventListener("submit", async (e) => {
     e.preventDefault();
     const name = document.getElementById("signupName").value.trim();
@@ -115,85 +131,53 @@
     const errorBox = document.getElementById("signupError");
     errorBox.textContent = "";
 
+    // Password check
     if (password.length < 8 || !/[A-Z]/.test(password) || !/\d/.test(password) || !/[^A-Za-z0-9]/.test(password)) {
       errorBox.textContent = "Password does not meet all requirements.";
       return;
     }
 
     try {
+      // --- Firebase Auth ---
       const cred = await createUserWithEmailAndPassword(auth, email, password);
       await updateProfile(cred.user, { displayName: name });
-      await set(ref(db, "users/" + cred.user.uid), { name, email, points: 0 });
+
+      // --- Add account to "accounts" in DB ---
+      await set(ref(db, `accounts/${name}`), {
+        email: email,
+        // no UID stored here, RFID added only when linked
+      });
+
+      // --- Add to linked_uids placeholder if needed later ---
+      // If user links RFID later, linked_uids/[RFID] -> {name, points, email}
+
       document.cookie = "loggedIn=true; path=/";
       window.location.href = "dashboard.html";
+
     } catch (err) {
       errorBox.textContent = err.message;
     }
   });
-</script>
 
-<script>
-  function toggleSettings() {
-    document.getElementById("settingsPanel").classList.toggle("show");
-  }
-  function toggleMobileNav() {
-    document.getElementById("mobileDropdown").classList.toggle("show");
-  }
-  function logout() {
+  // --- Navbar / Settings ---
+  window.toggleSettings = () => document.getElementById("settingsPanel")?.classList.toggle("show");
+  window.toggleMobileNav = () => document.getElementById("mobileDropdown")?.classList.toggle("show");
+  window.logout = () => {
     document.cookie = "loggedIn=false; path=/";
     window.location.href = "login.html";
-  }
-  function checkLogin(event) {
-    const isLoggedIn = document.cookie.includes("loggedIn=true");
+  };
+  window.checkLogin = (e) => {
     if (!isLoggedIn) {
-      event.preventDefault();
+      e.preventDefault();
       const popup = document.getElementById("popupMessage");
-      popup.style.display = "block";
-      setTimeout(() => popup.style.display = "none", 5000);
+      if (popup) {
+        popup.style.display = "block";
+        setTimeout(() => popup.style.display = "none", 5000);
+      }
     }
-  }
-
-  const isLoggedIn = document.cookie.includes("loggedIn=true");
-  document.getElementById("signupLink").style.display = isLoggedIn ? "none" : "inline";
-  document.getElementById("loginLink").style.display = isLoggedIn ? "none" : "inline";
-  if (document.getElementById("signupLinkMobile")) {
-    document.getElementById("signupLinkMobile").style.display = isLoggedIn ? "none" : "block";
-    document.getElementById("loginLinkMobile").style.display = isLoggedIn ? "none" : "block";
-  }
+  };
 </script>
 
-  <script>
-  // REFERENCE TO DATABASE
-const db = firebase.database();
-
-// Display all UIDs (linked & unlinked) in a table
-const dashboardTable = document.getElementById("dashboardTable"); // make sure this table exists in HTML
-db.ref("uids").on("value", snapshot => {
-  const data = snapshot.val() || {};
-  dashboardTable.innerHTML = `<tr><th>UID</th><th>Name</th><th>Points</th></tr>`;
-  for (let uid in data) {
-    const name = data[uid].name || "N/A"; // shows N/A if not linked
-    const points = data[uid].points || 0;
-    const row = document.createElement("tr");
-    row.innerHTML = `<td>${uid}</td><td>${name}</td><td>${points}</td>`;
-    dashboardTable.appendChild(row);
-  }
-});
-
-// Leaderboard for linked users only
-const leaderboardTable = document.getElementById("leaderboardTable"); // make sure this table exists
-db.ref("users").on("value", snapshot => {
-  const users = snapshot.val() || {};
-  leaderboardTable.innerHTML = `<tr><th>Name</th><th>Points</th></tr>`;
-  Object.values(users)
-    .sort((a,b) => (b.points || 0) - (a.points || 0))
-    .forEach(user => {
-      const row = document.createElement("tr");
-      row.innerHTML = `<td>${user.name}</td><td>${user.points || 0}</td>`;
-      leaderboardTable.appendChild(row);
-    });
-});
- 
-</script>
 </body>
 </html>
+
