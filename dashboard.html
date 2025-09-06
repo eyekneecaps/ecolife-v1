@@ -98,12 +98,12 @@
 </div>
 
 <script type="module">
-  // --- Import Firebase modules ---
+  // --- Firebase Imports ---
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
   import { getDatabase, ref, get, set, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
   import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
-  // --- Import QR Scanner ---
+  // --- QR Scanner ---
   import QrScanner from "https://unpkg.com/qr-scanner/qr-scanner.min.js";
   QrScanner.WORKER_PATH = "https://unpkg.com/qr-scanner/qr-scanner-worker.min.js";
 
@@ -126,6 +126,7 @@
     if (user) {
       currentUser = user;
       document.cookie = "loggedIn=true; path=/";
+
       get(ref(db, `users/${user.uid}/rfid`)).then(snapshot => {
         if (!snapshot.exists()) document.getElementById("rfidSection").style.display = "block";
       });
@@ -135,14 +136,14 @@
     }
   });
 
-  // --- Open RFID Modal & Start QR Scanner ---
+  // --- RFID Modal & QR Scanner ---
   let qrScannerInstance = null;
-  window.openRFIDModal = function () {
+  window.openRFIDModal = async function () {
     const modal = document.getElementById("rfidModal");
     const qrReaderDiv = document.getElementById("qr-reader");
 
     modal.style.display = "flex";
-    qrReaderDiv.innerHTML = ""; // clear old content
+    qrReaderDiv.innerHTML = "";
 
     const videoElem = document.createElement("video");
     videoElem.style.width = "100%";
@@ -152,7 +153,7 @@
       videoElem,
       async result => {
         if (!result || !currentUser) return;
-        const uid = result.data; // future-proof with returnDetailedScanResult
+        const uid = result.data;
 
         try {
           const unlinkedRef = ref(db, `unlinked_uids/${uid}`);
@@ -181,11 +182,7 @@
           alert("Error while linking RFID. Check console.");
         }
       },
-      {
-        returnDetailedScanResult: true,
-        highlightScanRegion: true,
-        highlightCodeOutline: true
-      }
+      { returnDetailedScanResult: true, highlightScanRegion: true, highlightCodeOutline: true }
     );
 
     qrScannerInstance.start().catch(err => {
@@ -202,7 +199,7 @@
     document.getElementById("qr-reader").innerHTML = "";
   };
 
-  // --- Dashboard Table ---
+  // --- Dashboard Table (Unlinked UIDs) ---
   const dashboardTable = document.getElementById("dashboardTable");
   onValue(ref(db, "unlinked_uids"), snapshot => {
     const data = snapshot.val() || {};
@@ -214,16 +211,17 @@
     }
   });
 
-  // --- Leaderboard Table ---
+  // --- Leaderboard Table (Linked UIDs) ---
   const leaderboardTable = document.getElementById("leaderboardTable");
   onValue(ref(db, "linked_uids"), snapshot => {
     const users = snapshot.val() || {};
     leaderboardTable.innerHTML = `<tr><th>Name</th><th>Points</th></tr>`;
     Object.values(users)
       .sort((a,b) => (b.points || 0) - (a.points || 0))
-      .forEach(user => {
+      .forEach((user, index) => {
+        const trophy = index === 0 ? " 🥇" : index === 1 ? " 🥈" : index === 2 ? " 🥉" : "";
         const row = document.createElement("tr");
-        row.innerHTML = `<td>${user.name}</td><td>${user.points || 0}</td>`;
+        row.innerHTML = `<td>${user.name || "User"}${trophy}</td><td>${user.points || 0}</td>`;
         leaderboardTable.appendChild(row);
       });
   });
@@ -239,6 +237,7 @@
   // --- Mobile Nav & Settings ---
   window.toggleMobileNav = () => document.getElementById("mobileDropdown").classList.toggle("show");
   window.toggleSettings = () => document.getElementById("settingsPanel").classList.toggle("show");
+
 </script>
 
 </body>
