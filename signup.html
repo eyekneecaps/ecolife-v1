@@ -83,12 +83,10 @@
 </div>
 
 <script type="module">
-  // --- Firebase Imports ---
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
   import { getAuth, createUserWithEmailAndPassword, updateProfile } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-  import { getDatabase, ref, set, onValue, update } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+  import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
-  // --- Firebase Config ---
   const firebaseConfig = {
     apiKey: "AIzaSyDW5APPZMu-lojVRNg89ZDBEY14YD77xd4",
     authDomain: "ecolife--v1.firebaseapp.com",
@@ -96,7 +94,6 @@
     projectId: "ecolife--v1"
   };
 
-  // --- Initialize Firebase ---
   const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
   const db = getDatabase(app);
@@ -131,26 +128,24 @@
     const errorBox = document.getElementById("signupError");
     errorBox.textContent = "";
 
-    // Password check
     if (password.length < 8 || !/[A-Z]/.test(password) || !/\d/.test(password) || !/[^A-Za-z0-9]/.test(password)) {
       errorBox.textContent = "Password does not meet all requirements.";
       return;
     }
 
     try {
-      // --- Firebase Auth ---
+      // --- Create Firebase Auth User ---
       const cred = await createUserWithEmailAndPassword(auth, email, password);
       await updateProfile(cred.user, { displayName: name });
 
-      // --- Add account to "accounts" in DB ---
-      await set(ref(db, `accounts/${name}`), {
+      // --- Add user to "users/{firebaseUID}" ---
+      await set(ref(db, `users/${cred.user.uid}`), {
+        name: name,
         email: email,
-        // no UID stored here, RFID added only when linked
+        points: 0
       });
 
-      // --- Add to linked_uids placeholder if needed later ---
-      // If user links RFID later, linked_uids/[RFID] -> {name, points, email}
-
+      // --- Set login cookie and redirect ---
       document.cookie = "loggedIn=true; path=/";
       window.location.href = "dashboard.html";
 
@@ -178,6 +173,8 @@
   };
 </script>
 
+
 </body>
 </html>
+
 
