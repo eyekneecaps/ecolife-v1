@@ -203,48 +203,39 @@
   const app = initializeApp(firebaseConfig);
   const db = getDatabase(app);
 
-  // --- Dashboard Table (all UIDs) ---
-  const dashboardTable = document.getElementById("dashboardTable");
-  onValue(ref(db, "uids"), snapshot => {
-    const data = snapshot.val() || {};
-    dashboardTable.innerHTML = `<tr><th>UID</th><th>Name</th><th>Points</th></tr>`;
-    for (let uid in data) {
-      const name = data[uid].name || "N/A";
-      const points = data[uid].points || 0;
-      const row = document.createElement("tr");
-      row.innerHTML = `<td>${uid}</td><td>${name}</td><td>${points}</td>`;
-      dashboardTable.appendChild(row);
-    }
-  });
-
-  // --- Leaderboard Table (linked users) ---
-  const leaderboardTable = document.getElementById("leaderboardTable");
-  onValue(ref(db, "users"), snapshot => {
-    const users = snapshot.val() || {};
-    leaderboardTable.innerHTML = `<tr><th>Name</th><th>Points</th></tr>`;
-    Object.values(users)
-      .sort((a, b) => (b.points || 0) - (a.points || 0))
-      .forEach((user, index) => {
-        const row = document.createElement("tr");
-        const trophy = index === 0 ? " 🥇" : index === 1 ? " 🥈" : index === 2 ? " 🥉" : "";
-        row.innerHTML = `<td>${user.name || "Unnamed"}${trophy}</td><td>${user.points || 0}</td>`;
-        leaderboardTable.appendChild(row);
-      });
-  });
-
-  // --- Navbar Behavior ---
+  // --- Navbar Login State ---
   const isLoggedIn = document.cookie.includes("loggedIn=true");
-
   const showOrHide = (id, show) => {
     const el = document.getElementById(id);
     if (el) el.style.display = show ? "inline" : "none";
   };
-
   showOrHide("signupLink", !isLoggedIn);
   showOrHide("loginLink", !isLoggedIn);
   showOrHide("signupLinkMobile", !isLoggedIn);
   showOrHide("loginLinkMobile", !isLoggedIn);
 
+  // --- Leaderboard ---
+  const leaderboardList = document.getElementById("leaderboardList");
+  onValue(ref(db, "linked_uids"), snapshot => {
+    const linked = snapshot.val() || {};
+    // Convert to array and sort by points descending
+    const sorted = Object.entries(linked)
+      .map(([rfid, data]) => ({ rfid, name: data.name, points: data.points || 0 }))
+      .sort((a, b) => b.points - a.points);
+
+    // Render list
+    leaderboardList.innerHTML = "";
+    sorted.forEach((user, index) => {
+      const trophy = index === 0 ? " 🥇" : index === 1 ? " 🥈" : index === 2 ? " 🥉" : "";
+      const li = document.createElement("li");
+      li.innerHTML = `<span class="rank">${index + 1}</span> ${user.name}${trophy} - ${user.points} pts`;
+      leaderboardList.appendChild(li);
+    });
+
+    if (sorted.length === 0) leaderboardList.innerHTML = "<li>No data yet</li>";
+  });
+
+  // --- Navbar / Settings ---
   window.toggleSettings = () => document.getElementById("settingsPanel")?.classList.toggle("show");
   window.toggleMobileNav = () => document.getElementById("mobileDropdown")?.classList.toggle("show");
 
@@ -265,7 +256,9 @@
   };
 </script>
 
+
 </body>
 </html>
+
 
 
