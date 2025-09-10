@@ -3,95 +3,57 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Profile – EcoLife</title>
+  <title>EcoLife – Profile</title>
   <link rel="stylesheet" href="style.css">
   <style>
     body {
       font-family: system-ui, sans-serif;
-      background: #0a192a;
-      color: white;
       margin: 0;
-      padding: 0;
+      background: #0a192a;
+      color: #fff;
     }
 
-    /* Top Navigation */
+    /* NAVIGATION */
     .topnav {
       display: flex;
       justify-content: space-between;
       align-items: center;
       padding: 1rem 2rem;
       background-color: #000;
+      position: sticky;
+      top: 0;
+      z-index: 100;
     }
 
-    .topnav a {
+    .nav-left, .nav-center, .nav-right { display: flex; align-items: center; gap: 1rem; }
+
+    .nav-center { font-weight: bold; font-size: 1.2rem; color: var(--accent, #00ff99); }
+
+    .nav-right a, .nav-right button {
       color: white;
       text-decoration: none;
-      margin-left: 1.5rem;
+      padding: 0.5rem 0.75rem;
+      border-radius: 6px;
+      background: none;
+      border: none;
+      cursor: pointer;
       font-weight: 500;
     }
 
-    .topnav a:hover {
-      color: #00ff99;
-    }
+    .nav-right a:hover, .nav-right button:hover { background: #073763; }
 
-    .gear {
-      cursor: pointer;
-      font-size: 1.5rem;
-    }
-
-    #settingsPanel {
-      display: none;
-      position: absolute;
-      top: 3.5rem;
-      right: 2rem;
-      background: #111;
-      padding: 1rem;
-      border-radius: 8px;
-      z-index: 1001;
-    }
-
-    #settingsPanel button {
-      display: block;
-      width: 100%;
-      margin: 0.5rem 0;
-      padding: 0.7rem 1rem;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      font-weight: bold;
-    }
-
-    #settingsPanel .logout-btn {
-      background: #e74c3c;
-      color: white;
-    }
-
-    /* Profile Container */
     .container {
-      max-width: 700px;
-      margin: 40px auto;
+      max-width: 600px;
+      margin: 3rem auto;
       padding: 2rem;
-      border-radius: 12px;
       background: #07121f;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.5);
     }
 
-    .info-row {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 15px;
-      font-size: 1.1rem;
-    }
-
-    .info-label {
-      font-weight: bold;
-      color: #ccc;
-    }
-
-    .uid {
-      font-family: monospace;
-      color: #00ff99;
-    }
+    .info-row { margin-bottom: 15px; }
+    .info-label { font-weight: bold; color: #00ff99; }
+    .uid { font-family: monospace; color: #4cafef; }
 
     .btn {
       display: block;
@@ -106,111 +68,114 @@
       transition: 0.2s;
     }
 
-    .btn:hover { opacity: 0.9; }
     .btn-back { background: #444; color: white; }
-    .btn-reset { background: #3498db; color: white; }
     .btn-logout { background: #e74c3c; color: white; }
+    .btn-reset { background: #3498db; color: white; }
+
+    @media(max-width:600px){
+      .topnav { flex-direction: column; align-items: flex-start; }
+      .nav-right { flex-wrap: wrap; gap: 0.5rem; }
+    }
   </style>
 </head>
 <body>
 
-<!-- Top Navigation -->
-<nav class="topnav">
-  <div>
-    <a href="dashboard.html">🌱 EcoLife</a>
+  <!-- TOP NAVIGATION -->
+  <nav class="topnav">
+    <div class="nav-left">
+      <a href="index.html">🌱 EcoLife</a>
+    </div>
+    <div class="nav-center">Profile</div>
+    <div class="nav-right">
+      <a href="dashboard.html">Dashboard</a>
+      <a href="leaderboard.html">Leaderboard</a>
+      <a href="products.html">Services</a>
+      <span id="loginLinks">
+        <a href="signup.html">Sign Up</a>
+        <a href="login.html">Login</a>
+      </span>
+      <button id="logoutBtn" style="display:none">Log Out</button>
+    </div>
+  </nav>
+
+  <div class="container">
+    <h2>Your Profile</h2>
+    <div class="info-row">
+      <span class="info-label">Email:</span>
+      <span id="email">Loading...</span>
+    </div>
+    <div class="info-row">
+      <span class="info-label">RFID Linked:</span>
+      <span id="rfid" class="uid">Checking...</span>
+    </div>
+    <div class="info-row">
+      <span class="info-label">User ID:</span>
+      <span id="uid" class="uid">---</span>
+    </div>
+
+    <button class="btn btn-back" onclick="window.location.href='dashboard.html'">← Back to Dashboard</button>
+    <button class="btn btn-reset" onclick="resetPassword()">Reset Password</button>
+    <button class="btn btn-logout" onclick="logout()">Log Out</button>
   </div>
-  <div>
-    <a href="dashboard.html">Dashboard</a>
-    <a href="profile.html">Profile</a>
-    <a href="leaderboard.html">Leaderboard</a>
-    <span class="gear" onclick="toggleSettings()">⚙️</span>
-  </div>
-</nav>
 
-<!-- Settings Dropdown -->
-<div id="settingsPanel">
-  <button class="btn logout-btn" onclick="logout()">Log Out</button>
-</div>
+  <!-- FIREBASE SCRIPT -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
+    import { getAuth, onAuthStateChanged, signOut, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
+    import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-database.js";
 
-<!-- Profile Container -->
-<div class="container">
-  <h2>Your Profile</h2>
+    const firebaseConfig = {
+      apiKey: "AIzaSyDW5APPZMu-lojVRNg89ZDBEY14YD77xd4",
+      authDomain: "ecolife--v1.firebaseapp.com",
+      databaseURL: "https://ecolife--v1-default-rtdb.europe-west1.firebasedatabase.app",
+      projectId: "ecolife--v1"
+    };
 
-  <div class="info-row">
-    <span class="info-label">Email:</span>
-    <span id="email">Loading...</span>
-  </div>
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getDatabase(app);
 
-  <div class="info-row">
-    <span class="info-label">RFID Linked:</span>
-    <span id="rfid" class="uid">Checking...</span>
-  </div>
+    // Check auth and display info
+    onAuthStateChanged(auth, (user) => {
+      const loginLinks = document.getElementById("loginLinks");
+      const logoutBtn = document.getElementById("logoutBtn");
 
-  <div class="info-row">
-    <span class="info-label">User ID:</span>
-    <span id="uid" class="uid">---</span>
-  </div>
+      if (user) {
+        document.getElementById("email").textContent = user.email;
+        document.getElementById("uid").textContent = user.uid;
 
-  <button class="btn btn-back" onclick="window.location.href='dashboard.html'">← Back to Dashboard</button>
-  <button class="btn btn-reset" onclick="resetPassword()">Reset Password</button>
-  <button class="btn btn-logout" onclick="logout()">Log Out</button>
-</div>
+        loginLinks.style.display = "none";
+        logoutBtn.style.display = "inline-block";
 
-<!-- Firebase Scripts -->
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
-  import { getAuth, onAuthStateChanged, signOut, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
-  import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-database.js";
-
-  const firebaseConfig = {
-    apiKey: "AIzaSyDW5APPZMu-lojVRNg89ZDBEY14YD77xd4",
-    authDomain: "ecolife--v1.firebaseapp.com",
-    databaseURL: "https://ecolife--v1-default-rtdb.europe-west1.firebasedatabase.app",
-    projectId: "ecolife--v1"
-  };
-
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-  const db = getDatabase(app);
-
-  // Check login
-  onAuthStateChanged(auth, (user) => {
-    if (user) {
-      document.getElementById("email").textContent = user.email;
-      document.getElementById("uid").textContent = user.uid;
-
-      const userRef = ref(db, 'users/' + user.uid);
-      onValue(userRef, (snapshot) => {
-        const data = snapshot.val();
-        document.getElementById("rfid").textContent = data?.rfid || "Not linked";
-      });
-    } else {
-      window.location.href = "login.html";
-    }
-  });
-
-  // Log Out
-  window.logout = function() {
-    signOut(auth).then(() => {
-      document.cookie = "loggedIn=false; path=/";
-      window.location.href = "login.html";
+        const userRef = ref(db, 'users/' + user.uid);
+        onValue(userRef, (snapshot) => {
+          const data = snapshot.val();
+          document.getElementById("rfid").textContent = data?.rfid || "Not linked";
+        });
+      } else {
+        loginLinks.style.display = "inline-block";
+        logoutBtn.style.display = "none";
+        document.getElementById("email").textContent = "---";
+        document.getElementById("uid").textContent = "---";
+        document.getElementById("rfid").textContent = "---";
+      }
     });
-  }
 
-  // Reset Password
-  window.resetPassword = function() {
-    const user = auth.currentUser;
-    if (user?.email) {
-      sendPasswordResetEmail(auth, user.email)
-        .then(() => alert("Password reset email sent to " + user.email))
-        .catch(err => alert("Error: " + err.message));
-    }
-  }
+    // Logout
+    window.logout = () => {
+      signOut(auth).then(() => location.href = "index.html");
+    };
 
-  // Toggle Settings Panel
-  window.toggleSettings = function() {
-    document.getElementById("settingsPanel").classList.toggle("show");
-  }
-</script>
+    // Reset password
+    window.resetPassword = () => {
+      const user = auth.currentUser;
+      if (user?.email) {
+        sendPasswordResetEmail(auth, user.email)
+          .then(() => alert("Password reset email sent to " + user.email))
+          .catch(err => alert("Error: " + err.message));
+      }
+    };
+  </script>
+
 </body>
 </html>
