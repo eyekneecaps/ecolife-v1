@@ -1,236 +1,113 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Services</title>
+  <title>EcoLife – Profile</title>
   <link rel="stylesheet" href="style.css" />
   <style>
-    body {
-      font-family: system-ui, sans-serif;
-      background: #0a192a;
-      color: white;
-      margin: 0;
-      padding: 0;
+    .container {
+      max-width: 600px;
+      margin: 40px auto;
+      padding: 20px;
+      border-radius: 12px;
+      background: var(--card-bg, #222);
+      box-shadow: 0 4px 10px rgba(0,0,0,0.4);
     }
-
-    .topnav {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 1rem;
-      background-color: #000;
-      color: white;
+    .info-row {
+      margin-bottom: 15px;
     }
-
-    .gear {
-      font-size: 1.5rem;
-      cursor: pointer;
-    }
-
-    .hamburger {
-      display: none;
-      font-size: 1.5rem;
-      background: none;
-      border: none;
-      color: white;
-    }
-
-    @media (max-width: 600px) {
-      .hamburger {
-        display: block;
-      }
-
-      .nav-dropdown {
-        display: none;
-        position: absolute;
-        right: 1rem;
-        top: 3.5rem;
-        background: #073763;
-        flex-direction: column;
-        padding: 1rem;
-        border-radius: 6px;
-        z-index: 999;
-      }
-
-      .nav-dropdown.show {
-        display: flex;
-      }
-
-      .nav-dropdown a {
-        color: white;
-        margin: 0.5rem 0;
-        text-decoration: none;
-      }
-    }
-
-    .product-container {
-      display: flex;
-      flex-direction: column;
-      gap: 3rem;
-      padding: 2rem;
-      max-width: 1200px;
-      margin: auto;
-    }
-
-    .product-card {
-      display: flex;
-      flex-direction: row;
-      gap: 2rem;
-      background: #07121f;
-      border-radius: 10px;
-      padding: 1.5rem;
-      align-items: center;
-      flex-wrap: wrap;
-    }
-
-    .product-card img {
-      width: 200px;
-      height: auto;
-      border-radius: 10px;
-      object-fit: cover;
-    }
-
-    .product-info {
-      flex: 1;
-    }
-
-    .product-info h2 {
-      margin: 0;
-      font-size: 1.5rem;
-    }
-
-    .product-info p {
-      margin: 0.5rem 0;
-      color: #ccc;
-    }
-
-    .price {
-      font-size: 1.3rem;
-      color: #00ff99;
-      margin: 0.5rem 0;
-    }
-
-    .buy-btn {
-      padding: 0.7rem 1.5rem;
-      background-color: #00ff99;
-      color: #000;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
+    .info-label {
       font-weight: bold;
-      margin-top: 1rem;
     }
-
-    .buy-btn:hover {
-      background-color: #00cc7a;
+    .uid {
+      font-family: monospace;
+      color: var(--accent, #4cafef);
     }
+    .btn {
+      display: block;
+      margin: 10px 0;
+      padding: 10px 14px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 15px;
+      transition: 0.2s;
+    }
+    .btn:hover { opacity: 0.85; }
+    .btn-back { background: #444; color: white; }
+    .btn-logout { background: #e74c3c; color: white; }
+    .btn-reset { background: #3498db; color: white; }
   </style>
 </head>
 <body>
+  <div class="container">
+    <h2>Your Profile</h2>
 
-<!-- TOP NAVIGATION -->
-<nav class="topnav">
-  <div class="nav-left">
-    <span class="gear" onclick="toggleSettings()">⚙️</span>
-  </div>
-  <div class="nav-center">EcoLife</div>
-  <div class="nav-right desktop-links">
-    <a href="index.html">About Us</a>
-    <a href="products.html">Services</a>
-    <a href="dashboard.html" onclick="checkLogin(event)">Dashboard</a>
-    <a href="leaderboard.html">Leaderboard</a>
-    <a href="signup.html" id="signupLink">Sign Up</a>
-    <a href="login.html" id="loginLink">Login</a>
-  </div>
-  <button class="hamburger" onclick="toggleMobileNav()">☰</button>
-</nav>
-
-<!-- MOBILE DROPDOWN -->
-<div class="nav-dropdown" id="mobileDropdown">
-  <a href="index.html">About Us</a>
-  <a href="products.html">Services</a>
-  <a href="dashboard.html" onclick="checkLogin(event)">Dashboard</a>
-  <a href="leaderboard.html">Leaderboard</a>
-  <a href="signup.html" id="signupLinkMobile">Sign Up</a>
-  <a href="login.html" id="loginLinkMobile">Login</a>
-</div>
-
-<!-- Services Content -->
-<div class="product-container">
-
-  <!-- Service 1 -->
-  <div class="product-card">
-    <img src="https://via.placeholder.com/200x200?text=EcoLife+Plastic" alt="EcoLife Plastic">
-    <div class="product-info">
-      <h2>EcoLife Plastic</h2>
-      <p>Subscribe for <strong>450 AED the first month</strong> and <strong>150 AED/month after</strong> until you cancel.  
-      Our trained professionals will collect your plastic waste and manage the entire recycling process for you.</p>
-      <div class="price">450 AED (first month) → 150 AED/month</div>
-      <button class="buy-btn" onclick="openModal()">Subscribe Now</button>
+    <div class="info-row">
+      <span class="info-label">Email:</span>
+      <span id="email">Loading...</span>
     </div>
-  </div>
 
-  <!-- Service 2 -->
-  <div class="product-card">
-    <img src="https://via.placeholder.com/200x200?text=EcoLife+Can" alt="EcoLife Can">
-    <div class="product-info">
-      <h2>EcoLife Can</h2>
-      <p>Subscribe for <strong>450 AED the first month</strong> and <strong>150 AED/month after</strong> until you cancel.  
-      Our trained professionals will collect your plastic waste and manage the entire recycling process for you.</p>
-      <div class="price">450 AED (first month) → 150 AED/month</div>
-      <button class="buy-btn" onclick="openModal()">Subscribe Now</button>
+    <div class="info-row">
+      <span class="info-label">RFID Linked:</span>
+      <span id="rfid" class="uid">Checking...</span>
     </div>
-  </div>
 
-  <!-- Service 3 -->
-  <div class="product-card">
-    <img src="https://via.placeholder.com/200x200?text=EcoLife+Card" alt="EcoLife Card">
-    <div class="product-info">
-      <h2>EcoLife Card</h2>
-      <p>Link this card to your account and make your recycling rewards system seamless.</p>
-      <div class="price">25 AED</div>
-      <button class="buy-btn" onclick="openModal()">Get Card</button>
+    <div class="info-row">
+      <span class="info-label">User ID:</span>
+      <span id="uid" class="uid">---</span>
     </div>
+
+    <button class="btn btn-back" onclick="window.location.href='dashboard.html'">← Back to Dashboard</button>
+    <button class="btn btn-reset" onclick="resetPassword()">Reset Password</button>
+    <button class="btn btn-logout" onclick="logout()">Log Out</button>
   </div>
 
-</div>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
+    import { getAuth, onAuthStateChanged, signOut, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
+    import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-database.js";
 
-<!-- JS -->
-<script>
-  function toggleMobileNav() {
-    document.getElementById("mobileDropdown").classList.toggle("show");
-  }
-  function toggleSettings() {
-    // Add settings logic if needed
-  }
+    const firebaseConfig = {
+      apiKey: "AIzaSyDW5APPZMu-lojVRNg89ZDBEY14YD77xd4",
+      authDomain: "ecolife--v1.firebaseapp.com",
+      databaseURL: "https://ecolife--v1-default-rtdb.europe-west1.firebasedatabase.app",
+      projectId: "ecolife--v1"
+    };
 
-  function openModal() {
-    document.getElementById("purchaseModal").style.display = "flex";
-  }
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getDatabase(app);
 
-  function closeModal() {
-    document.getElementById("purchaseModal").style.display = "none";
-  }
-</script>
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        document.getElementById("email").textContent = user.email;
+        document.getElementById("uid").textContent = user.uid;
 
-<!-- Purchase Popup Modal -->
-<div id="purchaseModal" style="display: none; position: fixed; top: 0; left: 0; 
-  width: 100%; height: 100%; background-color: rgba(0,0,0,0.7); 
-  justify-content: center; align-items: center; z-index: 1000;">
+        const userRef = ref(db, 'users/' + user.uid);
+        onValue(userRef, (snapshot) => {
+          const data = snapshot.val();
+          document.getElementById("rfid").textContent = data?.rfid || "Not linked";
+        });
+      } else {
+        window.location.href = "index.html";
+      }
+    });
 
-  <div style="background: #1a1a1a; padding: 2rem; border-radius: 12px; 
-    color: white; max-width: 400px; text-align: center; position: relative;">
-    
-    <span onclick="closeModal()" 
-      style="position: absolute; top: 10px; right: 15px; cursor: pointer; font-size: 1.5rem;">✕</span>
-    
-    <h3>🛒 Subscription Info</h3>
-    <p>To subscribe to EcoLife services, please contact:</p>
-    <p style="color: #00ffcc;"><strong>support.ecolife@gmail.com</strong></p>
-  </div>
-</div>
+    // Log out
+    window.logout = function () {
+      signOut(auth).then(() => window.location.href = "index.html");
+    }
 
+    // Reset password
+    window.resetPassword = function () {
+      const user = auth.currentUser;
+      if (user?.email) {
+        sendPasswordResetEmail(auth, user.email)
+          .then(() => alert("Password reset email sent to " + user.email))
+          .catch(err => alert("Error: " + err.message));
+      }
+    }
+  </script>
 </body>
 </html>
-
