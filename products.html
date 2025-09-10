@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Products</title>
+  <title>Services</title>
   <link rel="stylesheet" href="style.css" />
   <style>
     body {
@@ -137,7 +137,7 @@
   <div class="nav-center">EcoLife</div>
   <div class="nav-right desktop-links">
     <a href="index.html">About Us</a>
-    <a href="products.html">Products</a>
+    <a href="products.html">Services</a>
     <a href="dashboard.html" onclick="checkLogin(event)">Dashboard</a>
     <a href="leaderboard.html">Leaderboard</a>
     <a href="signup.html" id="signupLink">Sign Up</a>
@@ -149,46 +149,47 @@
 <!-- MOBILE DROPDOWN -->
 <div class="nav-dropdown" id="mobileDropdown">
   <a href="index.html">About Us</a>
-  <a href="products.html">Products</a>
+  <a href="products.html">Services</a>
   <a href="dashboard.html" onclick="checkLogin(event)">Dashboard</a>
   <a href="leaderboard.html">Leaderboard</a>
   <a href="signup.html" id="signupLinkMobile">Sign Up</a>
   <a href="login.html" id="loginLinkMobile">Login</a>
 </div>
 
-<!-- Product Content -->
+<!-- Services Content -->
 <div class="product-container">
 
-  <!-- Product 1 -->
+  <!-- Service 1 -->
   <div class="product-card">
-    <img src="https://via.placeholder.com/200x200?text=Product+1" alt="Product 1">
+    <img src="https://via.placeholder.com/200x200?text=EcoLife+Plastic" alt="EcoLife Plastic">
     <div class="product-info">
-      <h2>Smart Plastic Recycling Bin</h2>
-      <p>Track your plastic, earn points, and contribute to a cleaner world.</p>
-      <div class="price">350 AED</div>
-<button class="buy-btn" onclick="openModal()">Buy Now</button>
+      <h2>EcoLife Plastic</h2>
+      <p>Subscribe for <strong>450 AED the first month</strong> and <strong>150 AED/month after</strong> until you cancel.  
+      Our trained professionals will collect your plastic waste and manage the entire recycling process for you.</p>
+      <div class="price">450 AED (first month) → 150 AED/month</div>
+      <button class="buy-btn" onclick="openModal()">Subscribe Now</button>
     </div>
   </div>
 
-  <!-- Product 2 -->
+  <!-- Service 2 -->
   <div class="product-card">
-    <img src="https://via.placeholder.com/200x200?text=Product+2" alt="Product 2">
+    <img src="https://via.placeholder.com/200x200?text=EcoLife+Can" alt="EcoLife Can">
     <div class="product-info">
-      <h2>Smart Can Recycling Bin</h2>
-      <p>Track your plastic, earn points, and contribute to a cleaner world.</p>
-      <div class="price">300 AED</div>
-     <button class="buy-btn" onclick="openModal()">Buy Now</button>
+      <h2>EcoLife Can</h2>
+      <p>A simple and affordable service for collecting cans. Hassle-free recycling handled by our professional team.</p>
+      <div class="price">45 AED</div>
+      <button class="buy-btn" onclick="openModal()">Subscribe Now</button>
     </div>
   </div>
 
-    <!-- Product 3 -->
+  <!-- Service 3 -->
   <div class="product-card">
-    <img src="https://via.placeholder.com/200x200?text=Product+2" alt="Product 3">
+    <img src="https://via.placeholder.com/200x200?text=EcoLife+Card" alt="EcoLife Card">
     <div class="product-info">
-      <h2>RFID EcoCard</h2>
-      <p>Link to your EcoLife account and scan to log your recycling progress instantly.</p>
+      <h2>EcoLife Card</h2>
+      <p>Link this card to your account and make your recycling rewards system seamless.</p>
       <div class="price">25 AED</div>
-        <button class="buy-btn" onclick="openModal()">Buy Now</button>
+      <button class="buy-btn" onclick="openModal()">Get Card</button>
     </div>
   </div>
 
@@ -202,16 +203,15 @@
   function toggleSettings() {
     // Add settings logic if needed
   }
-</script>
-<script>function openModal() {
-  document.getElementById("purchaseModal").style.display = "flex";
-}
 
-function closeModal() {
-  document.getElementById("purchaseModal").style.display = "none";
-}
-</script>
+  function openModal() {
+    document.getElementById("purchaseModal").style.display = "flex";
+  }
 
+  function closeModal() {
+    document.getElementById("purchaseModal").style.display = "none";
+  }
+</script>
 
 <!-- Purchase Popup Modal -->
 <div id="purchaseModal" style="display: none; position: fixed; top: 0; left: 0; 
@@ -224,44 +224,11 @@ function closeModal() {
     <span onclick="closeModal()" 
       style="position: absolute; top: 10px; right: 15px; cursor: pointer; font-size: 1.5rem;">✕</span>
     
-    <h3>🛒 Purchase Info</h3>
-    <p>To purchase this product, please contact:</p>
+    <h3>🛒 Subscription Info</h3>
+    <p>To subscribe to EcoLife services, please contact:</p>
     <p style="color: #00ffcc;"><strong>support.ecolife@gmail.com</strong></p>
   </div>
 </div>
- <script>
-  // REFERENCE TO DATABASE
-const db = firebase.database();
 
-// Display all UIDs (linked & unlinked) in a table
-const dashboardTable = document.getElementById("dashboardTable"); // make sure this table exists in HTML
-db.ref("uids").on("value", snapshot => {
-  const data = snapshot.val() || {};
-  dashboardTable.innerHTML = `<tr><th>UID</th><th>Name</th><th>Points</th></tr>`;
-  for (let uid in data) {
-    const name = data[uid].name || "N/A"; // shows N/A if not linked
-    const points = data[uid].points || 0;
-    const row = document.createElement("tr");
-    row.innerHTML = `<td>${uid}</td><td>${name}</td><td>${points}</td>`;
-    dashboardTable.appendChild(row);
-  }
-});
-
-// Leaderboard for linked users only
-const leaderboardTable = document.getElementById("leaderboardTable"); // make sure this table exists
-db.ref("users").on("value", snapshot => {
-  const users = snapshot.val() || {};
-  leaderboardTable.innerHTML = `<tr><th>Name</th><th>Points</th></tr>`;
-  Object.values(users)
-    .sort((a,b) => (b.points || 0) - (a.points || 0))
-    .forEach(user => {
-      const row = document.createElement("tr");
-      row.innerHTML = `<td>${user.name}</td><td>${user.points || 0}</td>`;
-      leaderboardTable.appendChild(row);
-    });
-});
- 
-</script>
 </body>
 </html>
-
