@@ -3,100 +3,53 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>EcoLife – Profile</title>
+  <title>Sign Up – EcoLife</title>
   <link rel="stylesheet" href="style.css">
   <style>
-    body {
-      font-family: system-ui, sans-serif;
-      margin: 0;
-      background: #0a192a;
-      color: #fff;
+    body { font-family: system-ui, sans-serif; margin:0; padding:0; background:#0a192a; color:white; }
+    .topnav { display:flex; justify-content:space-between; align-items:center; padding:1rem; background-color:#000; }
+    .gear { font-size:1.5rem; cursor:pointer; color:white; }
+    .hamburger { display:none; font-size:1.5rem; background:none; border:none; color:white; }
+    @media (max-width:600px) {
+      .hamburger { display:block; }
+      .nav-dropdown { display:none; position:absolute; right:1rem; top:3.5rem; background:#073763; flex-direction:column; padding:1rem; border-radius:6px; z-index:999; }
+      .nav-dropdown.show { display:flex; }
+      .nav-dropdown a { color:white; margin:0.5rem 0; text-decoration:none; }
     }
-
-    /* NAVIGATION */
-    .topnav {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 1rem 2rem;
-      background-color: #000;
-      position: sticky;
-      top: 0;
-      z-index: 100;
-    }
-
-    .nav-left, .nav-center, .nav-right { display: flex; align-items: center; gap: 1rem; }
-
-    .nav-center { font-weight: bold; font-size: 1.2rem; color: var(--accent, #00ff99); }
-
-    .nav-right a, .nav-right button {
-      color: white;
-      text-decoration: none;
-      padding: 0.5rem 0.75rem;
-      border-radius: 6px;
-      background: none;
-      border: none;
-      cursor: pointer;
-      font-weight: 500;
-    }
-
-    .nav-right a:hover, .nav-right button:hover { background: #073763; }
-
-    .container {
-      max-width: 600px;
-      margin: 3rem auto;
-      padding: 2rem;
-      background: #07121f;
-      border-radius: 12px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.5);
-    }
-
-    .info-row { margin-bottom: 15px; }
-    .info-label { font-weight: bold; color: #00ff99; }
-    .uid { font-family: monospace; color: #4cafef; }
-
-    .btn {
-      display: block;
-      width: 100%;
-      margin: 10px 0;
-      padding: 12px;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      font-size: 16px;
-      font-weight: bold;
-      transition: 0.2s;
-    }
-
-    .btn-back { background: #444; color: white; }
-    .btn-logout { background: #e74c3c; color: white; }
-    .btn-reset { background: #3498db; color: white; }
-
-    @media(max-width:600px){
-      .topnav { flex-direction: column; align-items: flex-start; }
-      .nav-right { flex-wrap: wrap; gap: 0.5rem; }
-    }
+    .auth-box { max-width:400px; margin:6rem auto; padding:2rem; background:#07121f; border-radius:12px; box-shadow:0 4px 12px rgba(0,0,0,0.5); }
+    .auth-box h2 { text-align:center; margin-bottom:1.5rem; }
+    .auth-box input { width:100%; margin-bottom:1rem; padding:0.8rem; border-radius:6px; border:1px solid #444; background:#111; color:white; }
+    .auth-box button { width:100%; padding:0.8rem; background:#00ff99; border:none; border-radius:6px; font-weight:bold; cursor:pointer; margin-bottom:1rem; }
+    .auth-box button:hover { background:#00cc7a; }
+    .error-message { color:#ff5555; margin-bottom:1rem; font-size:0.9rem; text-align:center; }
+    .google-btn { background:#4285F4; color:white; margin-bottom:1rem; }
+    .google-btn:hover { background:#357ae8; }
   </style>
 </head>
 <body>
 
-  <!-- TOP NAVIGATION -->
-  <nav class="topnav">
-    <div class="nav-left">
-      <a href="index.html">🌱 EcoLife</a>
-    </div>
-    <div class="nav-center">Profile</div>
-    <div class="nav-right">
-      <a href="dashboard.html">Dashboard</a>
-      <a href="leaderboard.html">Leaderboard</a>
-      <a href="products.html">Services</a>
-      <span id="loginLinks">
-        <a href="signup.html">Sign Up</a>
-        <a href="login.html">Login</a>
-      </span>
-      <button id="logoutBtn" style="display:none">Log Out</button>
-    </div>
-  </nav>
+<nav class="topnav">
+  <div class="nav-left"><span class="gear" onclick="toggleSettings()">⚙️</span></div>
+  <div class="nav-center">EcoLife</div>
+  <div class="nav-right desktop-links">
+    <a href="index.html">About Us</a>
+    <a href="products.html">Services</a>
+    <a href="dashboard.html">Dashboard</a>
+    <a href="leaderboard.html">Leaderboard</a>
+    <a href="signup.html" id="signupLink">Sign Up</a>
+    <a href="login.html" id="loginLink">Login</a>
+  </div>
+  <button class="hamburger" onclick="toggleMobileNav()">☰</button>
+</nav>
+
+<div class="nav-dropdown" id="mobileDropdown">
+  <a href="index.html">About Us</a>
+  <a href="products.html">Services</a>
+  <a href="dashboard.html">Dashboard</a>
+  <a href="leaderboard.html">Leaderboard</a>
+  <a href="signup.html" id="signupLinkMobile">Sign Up</a>
+  <a href="login.html" id="loginLinkMobile">Login</a>
+</div>
 
   <div class="container">
     <h2>Your Profile</h2>
@@ -179,3 +132,4 @@
 
 </body>
 </html>
+
