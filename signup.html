@@ -59,6 +59,7 @@
   <h2>Create Account</h2>
   <div class="error-message" id="signupError"></div>
   <form id="signupForm">
+    
     <input type="text" id="fullName" placeholder="Full Name" required>
     <input type="email" id="signupEmail" placeholder="Email" required>
     <input type="password" id="signupPassword" placeholder="Password" required>
@@ -93,6 +94,13 @@
     const email = document.getElementById("signupEmail").value.trim();
     const password = document.getElementById("signupPassword").value;
     signupError.textContent = "";
+    
+    //passowrd validation twin
+if (password.length < 8) {
+  signupError.textContent = "Password must be at least 8 characters.";
+  return;
+}
+
 
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
@@ -142,3 +150,4 @@
     document.getElementById("loginLinkMobile").style.display = isLoggedIn ? "none" : "block";
   }
 </script>
+
