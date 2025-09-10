@@ -3,134 +3,54 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Sign In</title>
+  <title>Login – EcoLife</title>
   <link rel="stylesheet" href="style.css" />
   <style>
-    .topnav { display: flex; justify-content: space-between; align-items: center; padding: 1rem; background: #000; }
-    .gear { font-size: 1.5rem; cursor: pointer; color: white; }
-    .hamburger { display: none; font-size: 1.5rem; background: none; border: none; color: white; }
-    @media (max-width: 600px) {
-      .hamburger { display: block; }
-      .nav-dropdown {
-        display: none;
-        position: absolute;
-        right: 1rem;
-        top: 3.5rem;
-        background: #073763;
-        flex-direction: column;
-        padding: 1rem;
-        border-radius: 6px;
-        z-index: 999;
-      }
-      .nav-dropdown.show { display: flex; }
-      .nav-dropdown a { color: white; margin: 0.5rem 0; text-decoration: none; }
-    }
-    #settingsPanel {
-      display: none;
-      position: fixed;
-      top: 4rem;
-      left: 1rem;
-      background: #111;
-      padding: 1rem;
-      border-radius: 8px;
-      z-index: 1001;
-    }
-    #settingsPanel.show { display: block; }
-    .logout-btn {
-      color: red;
-      background: none;
-      border: none;
-      margin-top: 1rem;
-      text-decoration: underline;
-      cursor: pointer;
-    }
-    #popupMessage {
-      position: fixed;
-      top: 1rem;
-      left: 50%;
-      transform: translateX(-50%);
-      background-color: #ff4444;
-      color: white;
-      padding: 0.75rem 1.5rem;
-      border-radius: 5px;
-      display: none;
-      z-index: 1002;
-    }
+    body { font-family: system-ui, sans-serif; background: #0a192a; color: white; margin: 0; padding: 0; }
+    .auth-box { max-width: 400px; margin: 80px auto; padding: 2rem; background: #111; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.6); }
+    .auth-box h2 { text-align: center; margin-bottom: 1.5rem; }
+    .auth-box input { width: 100%; padding: 10px; margin-bottom: 1rem; border-radius: 6px; border: none; }
+    .auth-box button { width: 100%; padding: 10px; margin-bottom: 1rem; border-radius: 6px; border: none; cursor: pointer; font-weight: bold; transition: 0.2s; }
+    .auth-box button:hover { opacity: 0.85; }
+    .error-message { color: #ff4c4c; margin-bottom: 1rem; text-align: center; }
+    .google-btn { background: #4285F4; color: white; }
+    .signup-link { text-align: center; color: #4cafef; margin-top: 1rem; display: block; }
   </style>
 </head>
 <body>
 
-<!-- TOP NAVIGATION -->
-<!-- TOP NAVIGATION -->
-<nav class="topnav">
-  <div class="nav-left">
-    <span class="gear" onclick="toggleSettings()">⚙️</span>
-  </div>
-  <div class="nav-center">EcoLife</div>
-  <div class="nav-right desktop-links">
-    <a href="index.html">About Us</a>
-    <a href="products.html">Services</a>
-    <a href="dashboard.html" onclick="checkLogin(event)">Dashboard</a>
-    <a href="leaderboard.html">Leaderboard</a>
-    <a href="signup.html" id="signupLink">Sign Up</a>
-    <a href="login.html" id="loginLink">Login</a>
-  </div>
-  <button class="hamburger" onclick="toggleMobileNav()">☰</button>
-</nav>
-
-<!-- MOBILE DROPDOWN -->
-<div class="nav-dropdown" id="mobileDropdown">
-  <a href="index.html">About Us</a>
-  <a href="products.html">Products</a>
-  <a href="dashboard.html" onclick="checkLogin(event)">Dashboard</a>
-  <a href="leaderboard.html">Leaderboard</a>
-  <a href="signup.html" id="signupLinkMobile">Sign Up</a>
-  <a href="login.html" id="loginLinkMobile">Login</a>
-</div>
-
-<div id="settingsPanel">
-  <button class="logout-btn" onclick="logout()">Log Out</button>
-</div>
-
-<div id="popupMessage">
-  You must be logged in to view the dashboard.
-  <span class="close-btn" onclick="this.parentElement.style.display='none'">✕</span>
-</div>
-
-<div class="bg-animation"></div>
-
 <div class="auth-box">
-  <h2>Sign In</h2>
+  <h2>Login</h2>
+  <div class="error-message" id="loginError"></div>
   <form id="loginForm">
     <input type="email" id="loginEmail" placeholder="Email" required />
     <input type="password" id="loginPassword" placeholder="Password" required />
-    <div class="error-message" id="loginError"></div>
     <button type="submit">Login</button>
-    <p style="text-align:center; margin-top: 1rem;">
-      Don’t have an account? <a href="signup.html" style="color: var(--accent); font-weight: bold;">Create one</a>
-    </p>
   </form>
+  <button class="google-btn" id="googleLoginBtn">Sign in with Google</button>
+  <a href="signup.html" class="signup-link">Don't have an account? Sign Up</a>
 </div>
 
-<!-- Firebase -->
 <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
+  import { getAuth, signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyDW5APPZMu-lojVRNg89ZDBEY14YD77xd4",
     authDomain: "ecolife--v1.firebaseapp.com",
-    databaseURL: "https://ecolife--v1-default-rtdb.europe-west1.firebasedatabase.app",
-    projectId: "ecolife--v1"
+    projectId: "ecolife--v1",
+    databaseURL: "https://ecolife--v1-default-rtdb.europe-west1.firebasedatabase.app"
   };
 
   const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
 
-  const form = document.getElementById("loginForm");
+  const loginForm = document.getElementById("loginForm");
   const errorDiv = document.getElementById("loginError");
+  const googleBtn = document.getElementById("googleLoginBtn");
 
-  form.addEventListener("submit", async (e) => {
+  // Email/password login
+  loginForm.addEventListener("submit", async (e) => {
     e.preventDefault();
     const email = document.getElementById("loginEmail").value.trim();
     const password = document.getElementById("loginPassword").value;
@@ -143,73 +63,18 @@
       errorDiv.textContent = "Incorrect email or password.";
     }
   });
-</script>
 
-<!-- General Scripts -->
-<script>
-  function toggleSettings() {
-    document.getElementById("settingsPanel").classList.toggle("show");
-  }
-
-  function toggleMobileNav() {
-    document.getElementById("mobileDropdown").classList.toggle("show");
-  }
-
-  function logout() {
-    document.cookie = "loggedIn=false; path=/";
-    window.location.href = "login.html";
-  }
-
-  function checkLogin(event) {
-    const isLoggedIn = document.cookie.includes("loggedIn=true");
-    if (!isLoggedIn) {
-      event.preventDefault();
-      const popup = document.getElementById("popupMessage");
-      popup.style.display = "block";
-      setTimeout(() => popup.style.display = "none", 5000);
+  // Google login
+  googleBtn.addEventListener("click", async () => {
+    const provider = new GoogleAuthProvider();
+    try {
+      await signInWithPopup(auth, provider);
+      document.cookie = "loggedIn=true; path=/";
+      window.location.href = "dashboard.html";
+    } catch (error) {
+      errorDiv.textContent = "Google login failed.";
     }
-  }
-
-  const isLoggedIn = document.cookie.includes("loggedIn=true");
-  document.getElementById("signupLink").style.display = isLoggedIn ? "none" : "inline";
-  document.getElementById("loginLink").style.display = isLoggedIn ? "none" : "inline";
-  if (document.getElementById("signupLinkMobile")) {
-    document.getElementById("signupLinkMobile").style.display = isLoggedIn ? "none" : "block";
-    document.getElementById("loginLinkMobile").style.display = isLoggedIn ? "none" : "block";
-  }
-</script>
- <script>
-  // REFERENCE TO DATABASE
-const db = firebase.database();
-
-// Display all UIDs (linked & unlinked) in a table
-const dashboardTable = document.getElementById("dashboardTable"); // make sure this table exists in HTML
-db.ref("uids").on("value", snapshot => {
-  const data = snapshot.val() || {};
-  dashboardTable.innerHTML = `<tr><th>UID</th><th>Name</th><th>Points</th></tr>`;
-  for (let uid in data) {
-    const name = data[uid].name || "N/A"; // shows N/A if not linked
-    const points = data[uid].points || 0;
-    const row = document.createElement("tr");
-    row.innerHTML = `<td>${uid}</td><td>${name}</td><td>${points}</td>`;
-    dashboardTable.appendChild(row);
-  }
-});
-
-// Leaderboard for linked users only
-const leaderboardTable = document.getElementById("leaderboardTable"); // make sure this table exists
-db.ref("users").on("value", snapshot => {
-  const users = snapshot.val() || {};
-  leaderboardTable.innerHTML = `<tr><th>Name</th><th>Points</th></tr>`;
-  Object.values(users)
-    .sort((a,b) => (b.points || 0) - (a.points || 0))
-    .forEach(user => {
-      const row = document.createElement("tr");
-      row.innerHTML = `<td>${user.name}</td><td>${user.points || 0}</td>`;
-      leaderboardTable.appendChild(row);
-    });
-});
- 
+  });
 </script>
 </body>
 </html>
