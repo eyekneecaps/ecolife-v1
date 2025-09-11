@@ -42,9 +42,7 @@
 <!-- TOP NAVIGATION -->
 <nav class="topnav">
   <div class="nav-left">
-    
-<span class="gear" onclick="window.location.href='profile.html'">⚙️</span>
-
+    <span class="gear" onclick="window.location.href='profile.html'">⚙️</span>
   </div>
   <div class="nav-center">EcoLife</div>
   <div class="nav-right desktop-links">
@@ -61,7 +59,7 @@
 <!-- MOBILE DROPDOWN -->
 <div class="nav-dropdown" id="mobileDropdown">
   <a href="index.html">About Us</a>
-    <a href="products.html">Services</a>
+  <a href="products.html">Services</a>
   <a href="dashboard.html" onclick="checkLogin(event)">Dashboard</a>
   <a href="leaderboard.html">Leaderboard</a>
   <a href="signup.html" id="signupLinkMobile">Sign Up</a>
@@ -104,11 +102,11 @@
 
 <script type="module">
   const isLoggedIn = document.cookie.includes("loggedIn=true");
-document.querySelectorAll("#signupLink, #loginLink, #signupLinkMobile, #loginLinkMobile")
-        .forEach(el => el.style.display = isLoggedIn ? "none" : "");
+  document.querySelectorAll("#signupLink, #loginLink, #signupLinkMobile, #loginLinkMobile")
+    .forEach(el => el.style.display = isLoggedIn ? "none" : "");
 
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { getDatabase, ref, get, set, update, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+  import { getDatabase, ref, get, set, update, remove, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
   import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
   const firebaseConfig = {
@@ -193,19 +191,33 @@ document.querySelectorAll("#signupLink, #loginLink, #signupLinkMobile, #loginLin
       return;
     }
     try {
-      const mapRef = ref(db, `rfid_to_user/${uidValue}`);
-      const snap = await get(mapRef);
-      if (snap.exists()) {
-        rfidMessage.textContent = "This RFID is already linked to another account.";
+      // Check if UID exists in unlinked_uids
+      const unlinkedRef = ref(db, `unlinked_uids/${uidValue}`);
+      const unlinkedSnap = await get(unlinkedRef);
+      if (!unlinkedSnap.exists()) {
+        rfidMessage.textContent = "This RFID is not available for linking.";
         rfidMessage.style.color = "red";
         return;
       }
 
+      // Check if already linked
+      const mapRef = ref(db, `rfid_to_user/${uidValue}`);
+      const snap = await get(mapRef);
+      if (snap.exists()) {
+        rfidMessage.textContent = "This RFID is already linked.";
+        rfidMessage.style.color = "red";
+        return;
+      }
+
+      // Perform updates
       const updates = {};
       updates[`users/${currentUser.uid}/rfid`] = uidValue;
       updates[`rfid_to_user/${uidValue}`] = currentUser.uid;
-
+      updates[`linked_uids/${uidValue}`] = { name: currentUser.displayName || "User", points: 0 };
       await update(ref(db), updates);
+
+      // Remove from unlinked_uids
+      await remove(unlinkedRef);
 
       rfidMessage.textContent = "RFID linked successfully!";
       rfidMessage.style.color = "lightgreen";
