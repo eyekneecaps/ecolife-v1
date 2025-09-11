@@ -121,7 +121,7 @@
     <div style="margin-top:0.75rem;">
       <input id="rfidInput" placeholder="Enter RFID UID (e.g. 123456789)" />
       <button class="rfid-link-btn" id="linkButton">Link UID</button>
-      <button class="rfid-link-btn" id="unlinkButton" style="display:none; background:#b45309;">Unlink UID</button>
+
     </div>
 
     <div id="rfidMessage"></div>
@@ -133,12 +133,6 @@
     <table id="dashboardTable"><tr><th>UID</th><th>Points</th></tr><tr><td colspan="2">No data yet.</td></tr></table>
   </div>
 
-  <!-- Leaderboard: show all linked users sorted by points -->
-  <div class="card">
-    <h3>Leaderboard</h3>
-    <table id="leaderboardTable"><tr><th>Name</th><th>Points</th></tr></table>
-  </div>
-</div>
 
 <!-- RFID Modal (keeps for backwards compatibility) -->
 <div id="rfidModal" style="display:none; position:fixed; inset:0; align-items:center; justify-content:center; background: rgba(0,0,0,0.6); z-index:1002;">
