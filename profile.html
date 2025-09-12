@@ -125,47 +125,55 @@
       window.location.href = "index.html";
     }
   });
-//unlink uids
-import { getDatabase, ref, get, set, remove } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+  //unlink
+import { getDatabase, ref, get, set, remove } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-database.js";
 
-async function unlinkRFID(uid) {
+// expose unlinkRFID to window so the button can call it
+window.unlinkRFID = async () => {
+  if (!currentUID) {
+    alert("You must be logged in to unlink RFID.");
+    return;
+  }
+
   const db = getDatabase();
+  const userRef = ref(db, `users/${currentUID}/rfid`);
+  const snapshot = await get(userRef);
+
+  if (!snapshot.exists()) {
+    alert("No RFID linked to this account.");
+    return;
+  }
+
+  const rfid = snapshot.val();
 
   try {
-    // Get the user's RFID
-    const userRef = ref(db, `users/${uid}/rfid`);
-    const snapshot = await get(userRef);
+    // 1. Remove from user profile
+    await remove(userRef);
 
-    if (snapshot.exists()) {
-      const rfid = snapshot.val();
+    // 2. Remove reverse mapping
+    await remove(ref(db, `rfid_to_user/${rfid}`));
 
-      // Remove RFID from user profile
-      await remove(userRef);
+    // 3. Move linked_uids → unlinked_uids
+    const linkedRef = ref(db, `linked_uids/${rfid}`);
+    const linkedSnap = await get(linkedRef);
 
-      // Remove reverse mappings
-      await remove(ref(db, `rfid_to_user/${rfid}`));
+    if (linkedSnap.exists()) {
+      const data = linkedSnap.val();
 
-      // Move from linked_uids → unlinked_uids
-      const linkedRef = ref(db, `linked_uids/${rfid}`);
-      const linkedSnap = await get(linkedRef);
-      if (linkedSnap.exists()) {
-        const data = linkedSnap.val();
-
-        // Copy data to unlinked_uids
-        await set(ref(db, `unlinked_uids/${rfid}`), data);
-
-        // Delete from linked_uids
-        await remove(linkedRef);
-      }
-
-      console.log(`RFID ${rfid} moved to unlinked_uids`);
-    } else {
-      console.log("No RFID found for this user");
+      await set(ref(db, `unlinked_uids/${rfid}`), data); // copy
+      await remove(linkedRef); // delete old
     }
-  } catch (error) {
-    console.error("Error unlinking RFID:", error);
+
+    document.getElementById("rfid").textContent = "Not linked";
+    document.getElementById("unlinkBtn").style.display = "none";
+
+    console.log(`RFID ${rfid} successfully moved to unlinked_uids`);
+    alert("RFID unlinked successfully.");
+  } catch (err) {
+    console.error("Error unlinking RFID:", err);
+    alert("Error unlinking RFID: " + err.message);
   }
-}
+};
 
 
   // Logout
@@ -191,5 +199,6 @@ async function unlinkRFID(uid) {
 
 </body>
 </html>
+
 
 
