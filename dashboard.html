@@ -124,7 +124,19 @@
   <!-- Dashboard table -->
   <div class="card">
     <h3>Your Linked Card</h3>
-    <table id="dashboardTable"><tr><th>UID</th><th>Points</th></tr><tr><td colspan="2">No data yet.</td></tr></table>
+<table>
+  <tr>
+    <th>Name</th>
+    <th>Email</th>
+    <th>Points</th>
+  </tr>
+  <tr>
+    <td id="nameCell"></td>
+    <td id="emailCell"></td>
+    <td id="pointsCell"></td>
+  </tr>
+</table>
+
   </div>
 </div>
 
@@ -238,6 +250,26 @@
       showMessage(rfidMessage, "Error loading your data. Check console.", "error");
     }
   });
+
+  onAuthStateChanged(auth, async (user) => {
+  if (user) {
+    try {
+      const pointsRef = ref(db, `users/${user.uid}/points`);
+      const snapshot = await get(pointsRef);
+
+      if (snapshot.exists()) {
+        const points = snapshot.val();
+        document.getElementById("pointsCell").textContent = points;
+      } else {
+        document.getElementById("pointsCell").textContent = "0";
+      }
+    } catch (err) {
+      console.error("Error fetching points:", err);
+    }
+  } else {
+    console.log("Not logged in");
+  }
+});
 
   function updateDashboardTable(userData) {
     dashboardTable.innerHTML = `<tr><th>UID</th><th>Points</th></tr>`;
