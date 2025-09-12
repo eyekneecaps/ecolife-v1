@@ -124,17 +124,8 @@
   <!-- Dashboard table -->
   <div class="card">
     <h3>Your Linked Card</h3>
-<table>
-  <tr>
-    <th>Name</th>
-    <th>Email</th>
-    <th>Points</th>
-  </tr>
-  <tr>
-    <td id="nameCell"></td>
-    <td id="emailCell"></td>
-    <td id="pointsCell"></td>
-  </tr>
+  <table id="dashboardTable">
+
 </table>
 
   </div>
@@ -233,23 +224,36 @@
       userPointsEl.textContent = data?.points || 0;
       linkedRFIDEl.textContent = currentUserRFID || "Not linked";
 
-      updateDashboardTable(data);
+     function updateDashboardTable(userData) {
+  const dashboardTable = document.getElementById("dashboardTable");
 
-      if (!currentUserRFID) {
-        rfidSection.style.display = "block";
-        clearMessage(rfidMessage);
-      } else {
-        rfidSection.style.display = "block";
-        rfidInput.value = currentUserRFID;
-        rfidInput.disabled = true;
-        linkButton.style.display = "none";
-        clearMessage(rfidMessage);
-      }
-    } catch (err) {
-      console.error("Error reading user:", err);
-      showMessage(rfidMessage, "Error loading your data. Check console.", "error");
-    }
-  });
+  // Always reset the table with headers
+  dashboardTable.innerHTML = `
+    <tr>
+      <th>Name</th>
+      <th>Points</th>
+    </tr>
+  `;
+
+  if (userData && userData.rfid) {
+    const tr = document.createElement("tr");
+
+    // Name: try user's displayName or fallback to UID
+    const name = userData.name || currentUser.displayName || currentUser.uid;
+    const points = userData.points || 0;
+
+    tr.innerHTML = `
+      <td>${name}</td>
+      <td>${points}</td>
+    `;
+    dashboardTable.appendChild(tr);
+  } else {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td colspan="2">No RFID linked</td>`;
+    dashboardTable.appendChild(tr);
+  }
+}
+
 
   onAuthStateChanged(auth, async (user) => {
   if (user) {
