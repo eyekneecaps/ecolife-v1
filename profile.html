@@ -125,34 +125,48 @@
       window.location.href = "index.html";
     }
   });
+//unlink uids
+import { getDatabase, ref, get, set, remove } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
-  // ✅ Fixed unlink function
-  window.unlinkRFID = async function () {
-    if (!currentUID) return;
+async function unlinkRFID(uid) {
+  const db = getDatabase();
 
-    const userRef = ref(db, `users/${currentUID}/rfid`);
+  try {
+    // Get the user's RFID
+    const userRef = ref(db, `users/${uid}/rfid`);
     const snapshot = await get(userRef);
 
-    if (!snapshot.exists()) {
-      console.log("No RFID linked to this user.");
-      return;
+    if (snapshot.exists()) {
+      const rfid = snapshot.val();
+
+      // Remove RFID from user profile
+      await remove(userRef);
+
+      // Remove reverse mappings
+      await remove(ref(db, `rfid_to_user/${rfid}`));
+
+      // Move from linked_uids → unlinked_uids
+      const linkedRef = ref(db, `linked_uids/${rfid}`);
+      const linkedSnap = await get(linkedRef);
+      if (linkedSnap.exists()) {
+        const data = linkedSnap.val();
+
+        // Copy data to unlinked_uids
+        await set(ref(db, `unlinked_uids/${rfid}`), data);
+
+        // Delete from linked_uids
+        await remove(linkedRef);
+      }
+
+      console.log(`RFID ${rfid} moved to unlinked_uids`);
+    } else {
+      console.log("No RFID found for this user");
     }
+  } catch (error) {
+    console.error("Error unlinking RFID:", error);
+  }
+}
 
-    const rfidUid = snapshot.val();
-
-    // Remove RFID from user's profile
-    await remove(userRef);
-
-    // Remove mapping from rfid_to_user
-    await remove(ref(db, `rfid_to_user/${rfidUid}`));
-
-    // Remove from linked_uids
-    await remove(ref(db, `linked_uids/${rfidUid}`));
-
-    console.log(`RFID ${rfidUid} successfully unlinked from user ${currentUID}`);
-    document.getElementById("rfid").textContent = "Not linked";
-    document.getElementById("unlinkBtn").style.display = "none";
-  };
 
   // Logout
   window.logout = () => {
