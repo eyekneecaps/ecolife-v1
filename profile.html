@@ -133,20 +133,25 @@
 
   // Unlink RFID
   window.unlinkRFID = async function () {
-    if (!currentUID || !linkedRFID) return;
+  const snapshot = await get(userRef);
+  if (!snapshot.exists()) {
+    console.log("No RFID linked to this user.");
+    return;
+  }
 
-    try {
-      // Remove RFID from user profile
-      await update(ref(db, 'users/' + currentUID), { rfid: null });
+  const rfidUid = snapshot.val();
 
-      // Move RFID mapping from linked → unlinked
-      await remove(ref(db, 'rfid_to_user/' + linkedRFID));
-      await set(ref(db, 'unlinked_uids/' + linkedRFID), true);
+  // Remove RFID from user's profile
+  await remove(userRef);
 
-      alert("RFID " + linkedRFID + " unlinked successfully.");
-    } catch (err) {
-      alert("Error unlinking RFID: " + err.message);
-    }
+  // Remove mapping from rfid_to_user
+  await remove(ref(db, `rfid_to_user/${rfidUid}`));
+
+  // Remove from linked_uids
+  await remove(ref(db, `linked_uids/${rfidUid}`));
+
+  console.log(`RFID ${rfidUid} successfully unlinked from user ${userUid}`);
+}
   };
 
   // Logout
@@ -171,3 +176,4 @@
 </script>
 </body>
 </html>
+
