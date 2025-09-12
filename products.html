@@ -6,7 +6,7 @@
 <title>Services – EcoLife</title>
 <link rel="stylesheet" href="style.css" />
 <style>
-  body { font-family: system-ui, sans-serif; background: #0a192a; color: white; margin: 0; padding: 0; }
+  body { font-family: system-ui, sans-serif; background: #0a192a; color: white; margin: 0; padding: 0; overflow-x: hidden; }
   .topnav { display: flex; justify-content: space-between; align-items: center; padding: 1rem; background-color: #000; color: white; }
   .gear { font-size: 1.5rem; cursor: pointer; }
   .hamburger { display: none; font-size: 1.5rem; background: none; border: none; color: white; }
@@ -16,7 +16,6 @@
     .nav-dropdown.show { display: flex; }
     .nav-dropdown a { color: white; margin: 0.5rem 0; text-decoration: none; }
   }
-
   #settingsPanel { display: none; position: fixed; top: 4rem; left: 1rem; background: #111; padding: 1rem; border-radius: 8px; z-index: 1001; }
   .logout-btn { color: red; background: none; border: none; margin-top: 1rem; text-decoration: underline; cursor: pointer; }
 
@@ -29,26 +28,46 @@
   .info-btn { padding: 0.7rem 1.5rem; background-color: #00ccff; color: #000; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; margin-top: 1rem; }
   .info-btn:hover { background-color: #0099cc; }
 
-  /* Info Container */
-  .info-container { display: none; flex-direction: column; gap: 1rem; background: #0d1a2a; padding: 2rem; border-radius: 10px; margin-top: 1rem; }
-  .info-container p { color: #ccc; line-height: 1.6; }
+ .info-modal { 
+  display: none; 
+  position: fixed; 
+  top: 0; left: 0; width: 100%; height: 100%; 
+  background: rgba(0,0,0,0.85); 
+  justify-content: center; align-items: center; 
+  z-index: 1000; 
+  opacity: 0; 
+  transition: opacity 0.3s ease; 
+}
+.info-modal.show { display: flex; opacity: 1; }
 
-  .buy-now-btn { padding: 0.7rem 1.5rem; background-color: #00ff99; color: #000; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; width: max-content; }
-  .buy-now-btn:hover { background-color: #00cc7a; }
+.info-content { 
+  background: #0d1a2a; 
+  padding: 2rem; border-radius: 12px; 
+  max-width: 600px; width: 90%; 
+  position: relative; 
+  animation: slideIn 0.3s ease; 
+}
+.info-content span.close { position: absolute; top: 10px; right: 15px; font-size: 1.5rem; cursor: pointer; }
+@keyframes slideIn { 0% { transform: translateY(-50px); opacity: 0; } 100% { transform: translateY(0); opacity: 1; } }
 
-  /* Purchase Modal */
-  #purchaseModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.7); justify-content: center; align-items: center; z-index: 1000; }
-  #purchaseModal .modal-content { background: #1a1a1a; padding: 2rem; border-radius: 12px; color: white; max-width: 400px; text-align: center; position: relative; }
-  #purchaseModal span.close { position: absolute; top: 10px; right: 15px; cursor: pointer; font-size: 1.5rem; }
+/* Purchase Modal Enhancements */
+#purchaseModal { 
+  display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+  background-color: rgba(0,0,0,0.7); justify-content: center; align-items: center; 
+  z-index: 1001; opacity: 0; transition: opacity 0.3s ease; 
+}
+#purchaseModal.show { display: flex; opacity: 1; }
+#purchaseModal .modal-content { background: #1a1a1a; padding: 2rem; border-radius: 12px; color: white; max-width: 400px; text-align: center; position: relative; }
+#purchaseModal span.close { position: absolute; top: 10px; right: 15px; cursor: pointer; font-size: 1.5rem; }
 </style>
+
+
 </head>
 <body>
 
-<!-- TOP NAVIGATION -->
+<!-- Top Navigation -->
 <nav class="topnav">
-  <div class="nav-left">
-    <span class="gear" onclick="window.location.href='profile.html'">⚙️</span>
-  </div>
+  <div class="nav-left"><span class="gear" onclick="window.location.href='profile.html'">⚙️</span></div>
   <div class="nav-center">EcoLife</div>
   <div class="nav-right desktop-links">
     <a href="index.html">About Us</a>
@@ -61,7 +80,6 @@
   <button class="hamburger" onclick="toggleMobileNav()">☰</button>
 </nav>
 
-<!-- MOBILE DROPDOWN -->
 <div class="nav-dropdown" id="mobileDropdown">
   <a href="index.html">About Us</a>
   <a href="products.html">Services</a>
@@ -71,12 +89,11 @@
   <a href="login.html" id="loginLinkMobile">Login</a>
 </div>
 
-<!-- SETTINGS PANEL -->
 <div id="settingsPanel">
   <button class="logout-btn" onclick="logout()">Log Out</button>
 </div>
 
-<!-- Products Section -->
+<!-- Products -->
 <div class="product-container">
 
   <!-- Product 1 -->
@@ -85,14 +102,7 @@
     <div class="product-info">
       <h2>EcoLife Plastic</h2>
       <p>Professional plastic collection & recycling service.</p>
-      <button class="info-btn" onclick="toggleInfo('info1')">More Info</button>
-
-      <div class="info-container" id="info1">
-        <p>EcoLife Plastic is a comprehensive recycling service designed to make your life easier and more environmentally friendly. Our trained professionals collect your recyclable plastics directly from your home or business on a schedule that works for you. We sort, process, and ensure that your plastics are responsibly recycled into new products.</p>
-        <p>By using this service, you contribute directly to reducing landfill waste, minimizing environmental pollution, and promoting sustainable recycling practices. Every pickup helps conserve natural resources and reduces carbon emissions caused by improper disposal of plastics.</p>
-        <p>Pricing: 450 AED for the first month, 150 AED/month thereafter until you cancel. Easy, hassle-free, and impactful.</p>
-        <button class="buy-now-btn" onclick="openModal()">Buy Now</button>
-      </div>
+      <button class="info-btn" onclick="openInfo('info1')">More Info</button>
     </div>
   </div>
 
@@ -102,14 +112,7 @@
     <div class="product-info">
       <h2>EcoLife Can</h2>
       <p>Professional aluminum & metal can recycling service.</p>
-      <button class="info-btn" onclick="toggleInfo('info2')">More Info</button>
-
-      <div class="info-container" id="info2">
-        <p>EcoLife Can collects aluminum cans and other recyclable metals, providing an easy and efficient way to manage your recyclables. Our team picks up your items, sorts them, and ensures they are processed correctly to maximize recycling efficiency.</p>
-        <p>This service helps reduce resource waste, saves energy, and prevents metals from entering landfills. It's perfect for environmentally conscious households and businesses that want to make a real impact while keeping spaces clutter-free.</p>
-        <p>Pricing: 450 AED for the first month, 150 AED/month thereafter. Join thousands of residents in making recycling simple and meaningful.</p>
-        <button class="buy-now-btn" onclick="openModal()">Buy Now</button>
-      </div>
+      <button class="info-btn" onclick="openInfo('info2')">More Info</button>
     </div>
   </div>
 
@@ -119,20 +122,44 @@
     <div class="product-info">
       <h2>EcoLife Card</h2>
       <p>Scan and log your recycling activity instantly.</p>
-      <button class="info-btn" onclick="toggleInfo('info3')">More Info</button>
-
-      <div class="info-container" id="info3">
-        <p>The EcoLife Card links directly to your EcoLife account and allows you to instantly log your recycling activity with a simple scan. Every item you recycle is tracked, helping you monitor your environmental impact in real time.</p>
-        <p>This card motivates and rewards eco-friendly behavior by keeping a clear record of your contributions. Perfect for individuals, families, and schools who want to engage in responsible recycling and sustainability efforts.</p>
-        <p>Price: 25 AED per card. Simple, practical, and a great way to make your recycling efforts count.</p>
-        <button class="buy-now-btn" onclick="openModal()">Buy Now</button>
-      </div>
+      <button class="info-btn" onclick="openInfo('info3')">More Info</button>
     </div>
   </div>
 
 </div>
 
-<!-- PURCHASE MODAL -->
+<!-- Info Modals -->
+<div class="info-modal" id="info1">
+  <div class="info-content">
+    <span class="close" onclick="closeInfo('info1')">✕</span>
+    <h3>EcoLife Plastic</h3>
+    <p>Our trained professionals collect your plastics from your home or business, sort them carefully, and ensure they are recycled responsibly. This reduces landfill waste, prevents pollution, and conserves natural resources.</p>
+    <p>Pricing: 450 AED for the first month, 150 AED/month after. Simple, eco-friendly, and impactful.</p>
+    <button class="buy-now-btn" onclick="openModal()">Buy Now</button>
+  </div>
+</div>
+
+<div class="info-modal" id="info2">
+  <div class="info-content">
+    <span class="close" onclick="closeInfo('info2')">✕</span>
+    <h3>EcoLife Can</h3>
+    <p>We pick up aluminum cans and other recyclable metals, ensuring they are processed correctly to maximize recycling efficiency. Reduce energy waste and landfill contribution while keeping your space clutter-free.</p>
+    <p>Pricing: 450 AED first month, 150 AED/month after. Make recycling easy and impactful.</p>
+    <button class="buy-now-btn" onclick="openModal()">Buy Now</button>
+  </div>
+</div>
+
+<div class="info-modal" id="info3">
+  <div class="info-content">
+    <span class="close" onclick="closeInfo('info3')">✕</span>
+    <h3>EcoLife Card</h3>
+    <p>Scan your card to log recycling instantly. Track your impact, participate in eco-friendly rewards, and motivate sustainable habits at home, school, or work.</p>
+    <p>Price: 25 AED. Practical, simple, and motivating for everyone.</p>
+    <button class="buy-now-btn" onclick="openModal()">Buy Now</button>
+  </div>
+</div>
+
+<!-- Purchase Modal -->
 <div id="purchaseModal">
   <div class="modal-content">
     <span class="close" onclick="closeModal()">✕</span>
@@ -144,34 +171,48 @@
 
 <script>
   function toggleMobileNav() { document.getElementById("mobileDropdown").classList.toggle("show"); }
-  function toggleSettings() { document.getElementById("settingsPanel").classList.toggle("show"); }
   function logout() { document.cookie = "loggedIn=false; path=/"; window.location.href="login.html"; }
+  function checkLogin(event) { if (!document.cookie.includes("loggedIn=true")) { event.preventDefault(); alert("Login required"); } }
+
+  function openInfo(id) { document.getElementById(id).classList.add('show'); }
+  function closeInfo(id) { document.getElementById(id).classList.remove('show'); }
 
   function openModal() { document.getElementById("purchaseModal").style.display = "flex"; }
   function closeModal() { document.getElementById("purchaseModal").style.display = "none"; }
 
-  function toggleInfo(id) {
-    const container = document.getElementById(id);
-    container.style.display = container.style.display === "flex" ? "none" : "flex";
-  }
+  function openInfo(id) { 
+  const modal = document.getElementById(id);
+  modal.classList.add('show');
 
-  function checkLogin(event) {
-    const isLoggedIn = document.cookie.includes("loggedIn=true");
-    if (!isLoggedIn) {
-      event.preventDefault();
-      alert("You must be logged in to access the dashboard.");
-    }
-  }
+  // Close when clicking outside content
+  modal.addEventListener('click', function(e){
+    if(e.target === modal) closeInfo(id);
+  });
+}
 
+function closeInfo(id) { 
+  const modal = document.getElementById(id);
+  modal.classList.remove('show');
+}
+
+function openModal() {
+  const modal = document.getElementById("purchaseModal");
+  modal.classList.add('show');
+
+  modal.addEventListener('click', function(e){
+    if(e.target === modal) closeModal();
+  });
+}
+
+function closeModal() { 
+  document.getElementById("purchaseModal").classList.remove('show'); 
+}
   // Hide SignUp/Login links if logged in
   const isLoggedIn = document.cookie.includes("loggedIn=true");
-  document.getElementById("signupLink").style.display = isLoggedIn ? "none" : "inline";
-  document.getElementById("loginLink").style.display = isLoggedIn ? "none" : "inline";
-  if (document.getElementById("signupLinkMobile")) {
-    document.getElementById("signupLinkMobile").style.display = isLoggedIn ? "none" : "block";
-    document.getElementById("loginLinkMobile").style.display = isLoggedIn ? "none" : "block";
-  }
+  ['signupLink','loginLink','signupLinkMobile','loginLinkMobile'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el) el.style.display = (isLoggedIn && (id.includes('signup') || id.includes('login'))) ? 'none' : (id.includes('Mobile')? 'block':'inline');
+  });
 </script>
-
 </body>
 </html>
