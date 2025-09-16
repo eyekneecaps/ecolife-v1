@@ -30,6 +30,35 @@
   .info-btn:hover { background-color: #0099cc; }
   .buy-now-btn:hover { background-color: #0099cc; }
 
+    /* Yearly Plan Banner */
+.yearly-banner {
+  background: linear-gradient(135deg, #0f3460, #1a1a2a);
+  text-align: center;
+  padding: 1rem;
+  border-radius: 12px;
+  font-weight: bold;
+  font-size: 1.3rem;
+  color: #00ffcc;
+  box-shadow: 0 0 10px rgba(0,255,204,0.2);
+}
+
+/* Info Modal Enhancements */
+.plan-header {
+  text-align: center;
+  font-weight: bold;
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.pricing {
+  text-align: center;
+  font-size: 1.1rem;
+  margin: 1.2rem 0;
+  background: rgba(255,255,255,0.08);
+  padding: 10px;
+  border-radius: 8px;
+}
+
  .info-modal { 
   display: none; 
   position: fixed; 
@@ -96,14 +125,15 @@
 </div>
 
 <!-- Products -->
+<!-- Products -->
 <div class="product-container">
 
+  <!-- Yearly Plan Banner -->
+  <div class="product-card yearly-banner">
+    <h2>🌱 525 AED YEARLY PLAN AVAILABLE – Affordable & Eco-Friendly 🌱</h2>
+  </div>
+
   <!-- Product 1 -->
-        <div class="product-card>
-    <span class="close" onclick="closeInfo('info1')">✕</span>
-    <h3>525 AED YEARLY PLAN AVAILABLE</h3>
-  </div> 
-            
   <div class="product-card">
     <img src="https://via.placeholder.com/200x200?text=EcoLife+Plastic" alt="EcoLife Plastic">
     <div class="product-info">
@@ -135,19 +165,16 @@
 
 </div>
 
-    <div class="info-modal" id="info1">
-  <div class="info-content">
-    <span class="close" onclick="closeInfo('info1')">✕</span>
-    <h3>525 AED YEARLY PLAN AVAILABLE</h3>
-  </div>
-</div>
 <!-- Info Modals -->
 <div class="info-modal" id="info1">
   <div class="info-content">
     <span class="close" onclick="closeInfo('info1')">✕</span>
-    <h3>EcoLife Plastic</h3>
+    <h2 class="plan-header">EcoLife Plastic</h2>
     <p>Our trained professionals collect your plastics from your home or business, sort them carefully, and ensure they are recycled responsibly. This reduces landfill waste, prevents pollution, and conserves natural resources.</p>
-    <p>Pricing: 200 AED for the first month, 50 AED/month after.Yearly Plans Availabele at 525 AED per year. Simple, eco-friendly, and impactful.</p>
+    <p class="pricing">
+      💰 <strong>Pricing:</strong> 200 AED for the first month, 50 AED/month after.<br>
+      🌱 <strong>Yearly Plan:</strong> 525 AED/year
+    </p>
     <button class="buy-now-btn" onclick="openModal()">Buy Now</button>
   </div>
 </div>
@@ -155,9 +182,12 @@
 <div class="info-modal" id="info2">
   <div class="info-content">
     <span class="close" onclick="closeInfo('info2')">✕</span>
-    <h3>EcoLife Can</h3>
+    <h2 class="plan-header">EcoLife Can</h2>
     <p>We pick up aluminum cans and other recyclable metals, ensuring they are processed correctly to maximize recycling efficiency. Reduce energy waste and landfill contribution while keeping your space clutter-free.</p>
-    <p>Pricing: 200 AED for the first month, 50 AED/month after.Yearly Plans Availabele at 525 AED per year. Simple, eco-friendly, and impactful.</p>
+    <p class="pricing">
+      💰 <strong>Pricing:</strong> 200 AED for the first month, 50 AED/month after.<br>
+      🌱 <strong>Yearly Plan:</strong> 525 AED/year
+    </p>
     <button class="buy-now-btn" onclick="openModal()">Buy Now</button>
   </div>
 </div>
@@ -165,12 +195,15 @@
 <div class="info-modal" id="info3">
   <div class="info-content">
     <span class="close" onclick="closeInfo('info3')">✕</span>
-    <h3>EcoLife Card</h3>
+    <h2 class="plan-header">EcoLife Card</h2>
     <p>Scan your card to log recycling instantly. Track your impact, participate in eco-friendly rewards, and motivate sustainable habits at home, school, or work.</p>
-    <p>Price: 25 AED. Practical, simple, and motivating for everyone.</p>
+    <p class="pricing">
+      💳 <strong>Price:</strong> 25 AED (one-time)
+    </p>
     <button class="buy-now-btn" onclick="openModal()">Buy Now</button>
   </div>
 </div>
+
 
 <!-- Purchase Modal -->
 <div id="purchaseModal">
@@ -229,6 +262,7 @@ function closeModal() {
 </script>
 </body>
 </html>
+
 
 
 
