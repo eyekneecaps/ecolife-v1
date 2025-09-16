@@ -78,6 +78,18 @@
   position: relative; 
   animation: slideIn 0.3s ease; 
 }
+        #popupMessage {
+      position: fixed;
+      top: 1rem;
+      left: 50%;
+      transform: translateX(-50%);
+      background-color: #ff4444;
+      color: white;
+      padding: 0.75rem 1.5rem;
+      border-radius: 5px;
+      display: none;
+      z-index: 1002;
+    }
 .info-content span.close { position: absolute; top: 10px; right: 15px; font-size: 1.5rem; cursor: pointer; }
 @keyframes slideIn { 0% { transform: translateY(-50px); opacity: 0; } 100% { transform: translateY(0); opacity: 1; } }
 
@@ -124,6 +136,10 @@
   <button class="logout-btn" onclick="logout()">Log Out</button>
 </div>
 
+    <div id="popupMessage">
+  You must be logged in to view the dashboard.
+  <span class="close-btn" onclick="this.parentElement.style.display='none'">✕</span>
+</div>
 <!-- Products -->
 <!-- Products -->
 <div class="product-container">
@@ -262,6 +278,7 @@ function closeModal() {
 </script>
 </body>
 </html>
+
 
 
 
