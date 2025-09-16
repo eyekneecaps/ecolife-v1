@@ -99,6 +99,11 @@
 <div class="product-container">
 
   <!-- Product 1 -->
+        <div class="product-card>
+    <span class="close" onclick="closeInfo('info1')">✕</span>
+    <h3>525 AED YEARLY PLAN AVAILABLE</h3>
+  </div> 
+            
   <div class="product-card">
     <img src="https://via.placeholder.com/200x200?text=EcoLife+Plastic" alt="EcoLife Plastic">
     <div class="product-info">
@@ -130,13 +135,19 @@
 
 </div>
 
+    <div class="info-modal" id="info1">
+  <div class="info-content">
+    <span class="close" onclick="closeInfo('info1')">✕</span>
+    <h3>525 AED YEARLY PLAN AVAILABLE</h3>
+  </div>
+</div>
 <!-- Info Modals -->
 <div class="info-modal" id="info1">
   <div class="info-content">
     <span class="close" onclick="closeInfo('info1')">✕</span>
     <h3>EcoLife Plastic</h3>
     <p>Our trained professionals collect your plastics from your home or business, sort them carefully, and ensure they are recycled responsibly. This reduces landfill waste, prevents pollution, and conserves natural resources.</p>
-    <p>Pricing: 450 AED for the first month, 150 AED/month after. Simple, eco-friendly, and impactful.</p>
+    <p>Pricing: 200 AED for the first month, 50 AED/month after.Yearly Plans Availabele at 525 AED per year. Simple, eco-friendly, and impactful.</p>
     <button class="buy-now-btn" onclick="openModal()">Buy Now</button>
   </div>
 </div>
@@ -146,7 +157,7 @@
     <span class="close" onclick="closeInfo('info2')">✕</span>
     <h3>EcoLife Can</h3>
     <p>We pick up aluminum cans and other recyclable metals, ensuring they are processed correctly to maximize recycling efficiency. Reduce energy waste and landfill contribution while keeping your space clutter-free.</p>
-    <p>Pricing: 450 AED first month, 150 AED/month after. Make recycling easy and impactful.</p>
+    <p>Pricing: 200 AED for the first month, 50 AED/month after.Yearly Plans Availabele at 525 AED per year. Simple, eco-friendly, and impactful.</p>
     <button class="buy-now-btn" onclick="openModal()">Buy Now</button>
   </div>
 </div>
@@ -218,5 +229,6 @@ function closeModal() {
 </script>
 </body>
 </html>
+
 
 
