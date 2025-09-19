@@ -98,25 +98,28 @@ onAuthStateChanged(auth, user => {
   document.getElementById("loginLinkMobile").style.display = isLoggedIn ? "none" : "block";
 });
 
-// Fetch leaderboard every 6 seconds
+// Fetch only real users every 6 seconds
 async function updateLeaderboard() {
   try {
     const snapshot = await get(ref(db, "users"));
     const users = snapshot.val() || {};
     leaderboardList.innerHTML = "";
 
-    const sortedUsers = Object.values(users)
-      .sort((a,b) => (b.points || 0) - (a.points || 0));
+    // Filter users who have a "name" field (skip linked_uids without names)
+    const validUsers = Object.values(users).filter(u => u.name);
 
-    if(sortedUsers.length === 0) {
+    // Sort by points descending
+    validUsers.sort((a,b) => (b.points||0) - (a.points||0));
+
+    if(validUsers.length === 0){
       leaderboardList.innerHTML = "<li>No users yet.</li>";
       return;
     }
 
-    sortedUsers.forEach((user, index)=>{
+    validUsers.forEach((user, index)=>{
       const trophy = index===0?" 🥇":index===1?" 🥈":index===2?" 🥉":"";
       const li = document.createElement("li");
-      li.innerHTML = `<span class="rank">${index+1}</span>. ${user.name || "User"}${trophy} <span>${user.points||0} pts</span>`;
+      li.innerHTML = `<span class="rank">${index+1}</span>. ${user.name}${trophy} <span>${user.points||0} pts</span>`;
       leaderboardList.appendChild(li);
     });
 
@@ -125,9 +128,8 @@ async function updateLeaderboard() {
   }
 }
 
-// First load
+// Initial load + interval update
 updateLeaderboard();
-// Update every 6 seconds
 setInterval(updateLeaderboard, 6000);
 
 // Helpers
@@ -146,4 +148,3 @@ function checkLogin(event){
 
 </body>
 </html>
-
