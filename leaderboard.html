@@ -120,7 +120,7 @@ async function fetchLeaderboard() {
     });
   } catch(err) {
     console.error("Error fetching leaderboard:", err);
-    leaderboardList.innerHTML="<li>Error loading leaderboard.</li>";
+    leaderboardList.innerHTML="<li>Must be logged in to view leaderboard.</li>";
   }
 }
 
@@ -144,3 +144,4 @@ function checkLogin(event){
 
 </body>
 </html>
+
