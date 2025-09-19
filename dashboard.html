@@ -156,13 +156,20 @@ onAuthStateChanged(auth, async (user) => {
 
   // Fetch user data
   const userRef = ref(db, `users/${user.uid}`);
-  const snap = await get(userRef);
-  const data = snap.exists() ? snap.val() : null;
+onValue(userRef, (snap) => {
+  if (!snap.exists()) return;
+  const data = snap.val();
+
   currentUserRFID = data?.rfid || null;
   linkedRFIDEl.textContent = currentUserRFID || "Not linked";
   userPointsEl.textContent = data?.points || 0;
 
-  if (!currentUserRFID) { rfidSection.style.display = "block"; }
+  if (!currentUserRFID) {
+    rfidSection.style.display = "block";
+  } else {
+    rfidSection.style.display = "none";
+  }
+
   updateDashboardTable(data);
 });
 
