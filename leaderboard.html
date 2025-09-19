@@ -62,11 +62,10 @@
 </head>
 <body>
 
-<!-- TOP NAVIGATION -->
 <nav class="topnav">
   <div class="nav-left"><span class="gear" onclick="window.location.href='profile.html'">⚙️</span></div>
   <div class="nav-center">EcoLife</div>
-  <div class="nav-right desktop-links">
+  <div class="nav-right nav-links">
     <a href="index.html">About Us</a>
     <a href="products.html">Services</a>
     <a href="dashboard.html" onclick="checkLogin(event)">Dashboard</a>
@@ -77,7 +76,6 @@
   <button class="hamburger" onclick="toggleMobileNav()">☰</button>
 </nav>
 
-<!-- MOBILE DROPDOWN -->
 <div class="nav-dropdown" id="mobileDropdown">
   <a href="index.html">About Us</a>
   <a href="products.html">Services</a>
@@ -87,26 +85,22 @@
   <a href="login.html" id="loginLinkMobile">Login</a>
 </div>
 
-<!-- SETTINGS PANEL -->
 <div id="settingsPanel">
   <button class="logout-btn" onclick="logout()">Log Out</button>
 </div>
 
-<!-- LOGIN POPUP -->
 <div id="popupMessage">
   You must be logged in to view the dashboard.
   <span class="close-btn" onclick="this.parentElement.style.display='none'">✕</span>
 </div>
 
-<!-- LEADERBOARD -->
-<div class="auth-box" style="max-width: 800px; text-align: center;">
-  <h1 style="margin-bottom: 1rem;">🏆 Leaderboard</h1>
+<div class="auth-box" style="max-width:700px;margin:2rem auto;text-align:center;">
+  <h2>🏆 Leaderboard</h2>
   <ul id="leaderboardList">
     <li>Loading leaderboard...</li>
   </ul>
 </div>
 
-<!-- FIREBASE LEADERBOARD LOGIC -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
 import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-database.js";
@@ -122,10 +116,9 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const auth = getAuth(app);
-
 const leaderboardList = document.getElementById("leaderboardList");
 
-// Show/hide login/signup links
+// Update login links
 onAuthStateChanged(auth, user => {
   const isLoggedIn = !!user;
   document.cookie = `loggedIn=${isLoggedIn}; path=/`;
@@ -135,64 +128,39 @@ onAuthStateChanged(auth, user => {
   document.getElementById("loginLinkMobile").style.display = isLoggedIn ? "none" : "block";
 });
 
-// Fetch leaderboard based on linked RFIDs
+// Fetch leaderboard
 async function fetchLeaderboard() {
   try {
-    // 1. Get linked UIDs
-    const linkedSnapshot = await get(ref(db, "linked_uids"));
-    const linkedUsers = linkedSnapshot.val() || {};
-
-    // 2. Map each linked UID to its RFID(s)
-    const leaderboardData = [];
-
-    for (const uid in linkedUsers) {
-      const rfids = linkedUsers[uid] || [];
-      let totalPoints = 0;
-
-      // 3. Sum points from linked RFIDs
-      for (const rfid of rfids) {
-        const rfidSnapshot = await get(ref(db, `rfid_to_user/${rfid}`));
-        const linkedUid = rfidSnapshot.val();
-        if (linkedUid === uid) {
-          const userSnapshot = await get(ref(db, `users/${uid}`));
-          const points = userSnapshot.val()?.points || 0;
-          totalPoints = points; // Assuming points stored per user; adjust if stored per RFID
-        }
-      }
-
-      const userSnapshot = await get(ref(db, `users/${uid}`));
-      const name = userSnapshot.val()?.name || userSnapshot.val()?.email || "User";
-      leaderboardData.push({ name, points: totalPoints });
-    }
-
-    // Sort leaderboard
-    leaderboardData.sort((a,b)=> b.points - a.points);
-
-    // Render
+    const snapshot = await get(ref(db, "users"));
+    const users = snapshot.val() || {};
     leaderboardList.innerHTML = "";
-    if(leaderboardData.length === 0) {
-      leaderboardList.innerHTML = "<li>No users yet.</li>";
-      return;
+
+    const sortedUsers = Object.values(users).sort((a,b)=> (b.points||0)-(a.points||0));
+
+    if(sortedUsers.length === 0){ 
+      leaderboardList.innerHTML = "<li>No users yet.</li>"; 
+      return; 
     }
-    leaderboardData.forEach((user,index)=>{
+
+    sortedUsers.forEach((user,index)=>{
       const trophy = index===0?" 🥇":index===1?" 🥈":index===2?" 🥉":"";
+      const displayName = user.name || user.email || "User"; // fallback if no name
       const li = document.createElement("li");
-      li.innerHTML = `<span class="rank">${index+1}</span>. ${user.name}${trophy} <span>${user.points} pts</span>`;
+      li.innerHTML = `<span class="rank">${index+1}</span>. ${displayName}${trophy} <span>${user.points||0} pts</span>`;
       leaderboardList.appendChild(li);
     });
-
-  } catch(err){
+  } catch(err) {
     console.error("Error fetching leaderboard:", err);
-    leaderboardList.innerHTML = "<li>Error fetching leaderboard. Make sure you are logged in.</li>";
+    leaderboardList.innerHTML="<li>Must be logged in to view leaderboard.</li>";
   }
 }
 
-// Initial fetch and update every 6 seconds
+// Initial fetch and auto-update every 6 seconds
 fetchLeaderboard();
 setInterval(fetchLeaderboard, 6000);
 
 // Helpers
-window.logout = () => signOut(auth).then(()=>{ document.cookie="loggedIn=false; path=/"; location.href="login.html"; });
+window.logout = () => signOut(auth).then(()=>{ document.cookie="loggedIn=false; path=/"; window.location.href="login.html"; });
 window.toggleMobileNav = () => document.getElementById("mobileDropdown").classList.toggle("show");
 function checkLogin(event){
   const isLoggedIn = document.cookie.includes("loggedIn=true");
@@ -207,3 +175,4 @@ function checkLogin(event){
 
 </body>
 </html>
+
