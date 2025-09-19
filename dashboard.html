@@ -137,8 +137,14 @@ const linkButton = document.getElementById("linkButton");
 const rfidMessage = document.getElementById("rfidMessage");
 const dashboardTable = document.getElementById("dashboardTable");
 
+const modal = document.getElementById("rfidModal");
+const modalInput = document.getElementById("modalRfidInput");
+const modalLinkBtn = document.getElementById("modalLinkBtn");
+const modalMessage = document.getElementById("modalRfidMessage");
+
 let currentUser = null;
 let currentUserRFID = null;
+let rfidPointsListener = null;
 
 // Helpers
 function showMessage(el, text, type="error") {
@@ -147,11 +153,11 @@ function showMessage(el, text, type="error") {
 }
 function clearMessage(el){ el.textContent=""; el.className=""; }
 
-function updateDashboardTable(data){
+function updateDashboardTable(rfid, points){
   dashboardTable.innerHTML = `<tr><th>UID</th><th>Points</th></tr>`;
-  if(data && data.rfid){
+  if(rfid){
     const tr = document.createElement("tr");
-    tr.innerHTML = `<td>${data.rfid}</td><td>${data.points||0}</td>`;
+    tr.innerHTML = `<td>${rfid}</td><td>${points||0}</td>`;
     dashboardTable.appendChild(tr);
   } else {
     const tr = document.createElement("tr");
@@ -162,56 +168,56 @@ function updateDashboardTable(data){
 
 // Auth listener
 onAuthStateChanged(auth, async (user)=>{
-  if(!user){
-    window.location.href="login.html";
-    return;
-  }
+  if(!user){ window.location.href="login.html"; return; }
   currentUser = user;
   userNameEl.textContent = user.displayName || "User";
   userIdEl.textContent = user.uid;
 
-  // Listen to user's node
   const userRef = ref(db, `users/${user.uid}`);
-  onValue(userRef, async (snap)=>{
+  onValue(userRef, (snap)=>{
     if(!snap.exists()) return;
     const data = snap.val();
     currentUserRFID = data?.rfid || null;
     linkedRFIDEl.textContent = currentUserRFID || "Not linked";
 
+    // Remove previous points listener if any
+    if(rfidPointsListener) rfidPointsListener();
+
     if(!currentUserRFID){
       rfidSection.style.display = "block";
-      userPointsEl.textContent = "0";
-      updateDashboardTable(null);
+      userPointsEl.textContent = data.points || "0";
+      updateDashboardTable(null, null);
     } else {
       rfidSection.style.display = "none";
 
-      // Listen to points under rfid_to_user
-      const rfidPointsRef = ref(db, `rfid_to_user/${currentUserRFID}/points`);
-      onValue(rfidPointsRef, (ptsSnap)=>{
+      // Listen in real-time to linked_uids/{RFID}/points
+      const rfidPointsRef = ref(db, `linked_uids/${currentUserRFID}/points`);
+      rfidPointsListener = onValue(rfidPointsRef, (ptsSnap)=>{
         const points = ptsSnap.exists() ? ptsSnap.val() : 0;
         userPointsEl.textContent = points;
-        updateDashboardTable({ rfid: currentUserRFID, points });
+        updateDashboardTable(currentUserRFID, points);
       });
     }
   });
 });
 
-// RFID linking
-linkButton.addEventListener("click", async ()=>{
-  clearMessage(rfidMessage);
-  const uidValue = (rfidInput.value||"").trim();
-  if(!uidValue){ showMessage(rfidMessage,"Enter a valid UID."); return; }
-  if(currentUserRFID){ showMessage(rfidMessage,"You already have a linked RFID."); return; }
+// RFID linking function (shared by both inline and modal)
+async function linkRFID(uidValue, inputEl, messageEl, buttonEl){
+  clearMessage(messageEl);
+  uidValue = (uidValue||"").trim();
+  if(!uidValue){ showMessage(messageEl,"Enter a valid UID."); return; }
+  if(currentUserRFID){ showMessage(messageEl,"You already have a linked RFID."); return; }
 
   try{
     const unlinkedRef = ref(db, `unlinked_uids/${uidValue}`);
     const snap = await get(unlinkedRef);
-    if(!snap.exists()){ showMessage(rfidMessage,"This RFID is not available."); return; }
+    if(!snap.exists()){ showMessage(messageEl,"This RFID is not available."); return; }
 
     const points = snap.val()?.points||0;
 
     await update(ref(db),{
       [`users/${currentUser.uid}/rfid`]: uidValue,
+      [`users/${currentUser.uid}/points`]: points,
       [`rfid_to_user/${uidValue}`]: { uid: currentUser.uid, points },
       [`linked_uids/${uidValue}`]: { name: currentUser.displayName||"User", points }
     });
@@ -220,19 +226,49 @@ linkButton.addEventListener("click", async ()=>{
     currentUserRFID = uidValue;
     linkedRFIDEl.textContent = uidValue;
     userPointsEl.textContent = points;
-    updateDashboardTable({ rfid: uidValue, points });
+    updateDashboardTable(uidValue, points);
 
-    rfidInput.disabled = true; linkButton.style.display="none";
-    showMessage(rfidMessage, `RFID ${uidValue} linked successfully.`,"success");
-  }catch(err){ console.error(err); showMessage(rfidMessage,"Error linking RFID."); }
-});
+    inputEl.disabled = true;
+    if(buttonEl) buttonEl.style.display="none";
+    showMessage(messageEl, `RFID ${uidValue} linked successfully.`,"success");
+    closeRFIDModal();
+  } catch(err){ console.error(err); showMessage(messageEl,"Error linking RFID."); }
+}
+
+// Inline linking
+linkButton.addEventListener("click", ()=>linkRFID(rfidInput.value, rfidInput, rfidMessage, linkButton));
+
+// Modal linking
+modalLinkBtn.addEventListener("click", ()=>linkRFID(modalInput.value, modalInput, modalMessage, modalLinkBtn));
+
+function openRFIDModal(){
+  modal.style.display = "flex";
+  modalInput.value = "";
+  clearMessage(modalMessage);
+}
+function closeRFIDModal(){ modal.style.display = "none"; }
 
 // Logout
 window.logout = ()=>signOut(auth).then(()=>window.location.href="login.html");
 
-// Mobile nav
+// Mobile nav toggle
 window.toggleMobileNav = ()=>document.getElementById("mobileDropdown").classList.toggle("show");
+
+// Gear icon toggle for settings panel
+document.querySelector(".gear").addEventListener("click", ()=>{
+  const panel = document.getElementById("settingsPanel");
+  panel.style.display = panel.style.display === "none" ? "block" : "none";
+});
+
+// Check login for dashboard link
+window.checkLogin = (e)=>{
+  if(!currentUser){
+    e.preventDefault();
+    alert("You must be logged in to access the dashboard.");
+  }
+};
 </script>
+
 
 
 </body>
