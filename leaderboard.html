@@ -99,33 +99,50 @@ onAuthStateChanged(auth, user => {
   document.getElementById("signupLinkMobile").style.display = isLoggedIn ? "none" : "block";
   document.getElementById("loginLinkMobile").style.display = isLoggedIn ? "none" : "block";
 });
-
-// Fetch leaderboard
+//LEADERBOARD
 async function fetchLeaderboard() {
   try {
-    const snapshot = await get(ref(db, "users"));
-    const users = snapshot.val() || {};
+    const rfidSnapshot = await get(ref(db, "rfid_to_user"));
+    const rfidUsers = rfidSnapshot.val() || {};
     leaderboardList.innerHTML = "";
 
-    const sortedUsers = Object.values(users).sort((a,b)=> (b.points||0)-(a.points||0));
+    const leaderboardData = [];
 
-    if(sortedUsers.length === 0){ 
-      leaderboardList.innerHTML = "<li>No users yet.</li>"; 
-      return; 
+    // For each linked RFID, fetch user info
+    for (const rfid in rfidUsers) {
+      const uid = rfidUsers[rfid];
+      const userSnapshot = await get(ref(db, `users/${uid}`));
+      const user = userSnapshot.val();
+      if (user) {
+        leaderboardData.push({
+          name: user.name || user.email || "User",
+          points: user.points || 0
+        });
+      }
     }
 
-    sortedUsers.forEach((user,index)=>{
-      const trophy = index===0?" 🥇":index===1?" 🥈":index===2?" 🥉":"";
-      const displayName = user.name || user.email || "User"; 
+    // Sort by points descending
+    leaderboardData.sort((a,b) => b.points - a.points);
+
+    if (leaderboardData.length === 0) {
+      leaderboardList.innerHTML = "<li>No users yet.</li>";
+      return;
+    }
+
+    // Display leaderboard
+    leaderboardData.forEach((user, index) => {
+      const trophy = index === 0 ? " 🥇" : index === 1 ? " 🥈" : index === 2 ? " 🥉" : "";
       const li = document.createElement("li");
-      li.innerHTML = `<div><span class="rank">${index+1}</span>${displayName}${trophy}</div><span class="points">${user.points||0} pts</span>`;
+      li.innerHTML = `<div><span class="rank">${index+1}</span>${user.name}${trophy}</div><span class="points">${user.points} pts</span>`;
       leaderboardList.appendChild(li);
     });
+
   } catch(err) {
     console.error("Error fetching leaderboard:", err);
-    leaderboardList.innerHTML="<li>Must be logged in to view leaderboard.</li>";
+    leaderboardList.innerHTML = "<li>Must be logged in to view leaderboard.</li>";
   }
 }
+
 
 // Initial fetch and auto-update every 6 seconds
 fetchLeaderboard();
@@ -147,3 +164,4 @@ function checkLogin(event){
 
 </body>
 </html>
+
