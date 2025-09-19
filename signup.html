@@ -116,21 +116,33 @@ if (password.length < 8) {
   });
 
   // Google Sign-up
-  const googleBtn = document.getElementById("googleSignupBtn");
-  googleBtn.addEventListener("click", async () => {
-    const provider = new GoogleAuthProvider();
-    try {
-      const result = await signInWithPopup(auth, provider);
-      const user = result.user;
-      // Save user to database if not exists
-      await set(ref(db, 'users/' + user.uid), { name: user.displayName, email: user.email, points: 0 });
-      document.cookie = "loggedIn=true; path=/";
-      window.location.href = "dashboard.html";
-    } catch (err) {
-      signupError.textContent = "Google signup failed. Make sure your domain is authorized.";
-      console.error(err);
+// Google Sign-up
+const googleBtn = document.getElementById("googleSignupBtn");
+googleBtn.addEventListener("click", async () => {
+  const provider = new GoogleAuthProvider();
+  try {
+    const result = await signInWithPopup(auth, provider);
+    const user = result.user;
+
+    let name = user.displayName;
+    if (!name) {
+      // Ask user for name if Google account has no displayName
+      name = prompt("Please enter your full name:", "");
+      if (!name) name = "User";
+      await updateProfile(user, { displayName: name });
     }
-  });
+
+    // Save user to database
+    await set(ref(db, 'users/' + user.uid), { name: name, email: user.email, points: 0 });
+    document.cookie = "loggedIn=true; path=/";
+    window.location.href = "dashboard.html";
+
+  } catch (err) {
+    signupError.textContent = "Google signup failed. Make sure your domain is authorized.";
+    console.error(err);
+  }
+});
+
 </script>
 
 <script>
@@ -150,4 +162,5 @@ if (password.length < 8) {
     document.getElementById("loginLinkMobile").style.display = isLoggedIn ? "none" : "block";
   }
 </script>
+
 
