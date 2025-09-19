@@ -219,7 +219,7 @@ async function linkRFID(uidValue, inputEl, messageEl, buttonEl){
       [`users/${currentUser.uid}/rfid`]: uidValue,
       [`users/${currentUser.uid}/points`]: points,
       [`rfid_to_user/${uidValue}`]: { uid: currentUser.uid, points },
-      [`linked_uids/${uidValue}`]: { name: currentUser.displayName||"User", points }
+      [`linked_uids/${uidValue}`]: { points }
     });
     await remove(unlinkedRef);
 
