@@ -8,32 +8,56 @@
   <link rel="stylesheet" href="style.css" />
   <style>
     body { background:#0a192a; color:white; font-family:system-ui,sans-serif; margin:0; padding:0; }
-
-    /* Top nav same as About Us page */
-    .topnav { display:flex; align-items:center; justify-content:space-between; padding:1rem; background-color:#000; color:white; position:relative; z-index:10; }
+    .topnav {
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      padding:1rem;
+      background-color:#000;
+      color:white;
+      position:relative;
+      z-index:10;
+    }
     .gear { font-size:1.5rem; cursor:pointer; }
-    .hamburger { display:none; font-size:1.5rem; background:none; border:none; color:white; }
-    @media (max-width:600px){
-      .hamburger{display:block}
-      .nav-dropdown{display:none; position:absolute; right:1rem; top:3.5rem; background:#073763; flex-direction:column; padding:1rem; border-radius:6px; z-index:999;}
+    .hamburger {
+      display:none;
+      font-size:1.5rem;
+      background:none;
+      border:none;
+      color:white;
+    }
+    @media(max-width:600px){
+      .hamburger{display:block;}
+      .nav-dropdown{
+        display:none; position:absolute; right:1rem; top:3.5rem;
+        background:#073763; flex-direction:column; padding:1rem; border-radius:6px; z-index:999;
+      }
       .nav-dropdown.show{display:flex;}
-      .nav-dropdown a{color:white; margin:0.5rem 0; text-decoration:none;}
+      .nav-dropdown a{color:white;margin:0.5rem 0;text-decoration:none;}
       .nav-dropdown a:hover{text-decoration:underline;}
     }
+    #settingsPanel{display:none;position:fixed;top:4rem;left:1rem;background:#111;padding:1rem;border-radius:8px;z-index:1001;}
+    .logout-btn{color:red;text-decoration:underline;background:none;border:none;margin-top:1rem;cursor:pointer;}
+    #popupMessage{position:fixed;top:1rem;left:50%;transform:translateX(-50%);background-color:#ff4444;color:white;padding:0.75rem 1.5rem;border-radius:5px;display:none;z-index:1002;}
+    #popupMessage .close-btn{margin-left:1rem;cursor:pointer;}
 
-    #settingsPanel{display:none; position:fixed; top:4rem; left:1rem; background:#111; padding:1rem; border-radius:8px; z-index:1001;}
-    .logout-btn{color:red; text-decoration:underline; background:none; border:none; margin-top:1rem; cursor:pointer;}
-    #popupMessage{position:fixed; top:1rem; left:50%; transform:translateX(-50%); background:#ff4444; color:white; padding:0.75rem 1.5rem; border-radius:5px; display:none; z-index:1002;}
-    #popupMessage .close-btn{margin-left:1rem; cursor:pointer;}
-
-    /* Leaderboard list styling */
-    .auth-box{max-width:800px; margin:2rem auto; text-align:center;}
-    ul#leaderboardList{list-style:none; padding:0; margin:0;}
-    ul#leaderboardList li{
-      margin:0.5rem 0; padding:0.75rem 1rem; background:#1d3b5c; border-radius:6px;
-      display:flex; justify-content:space-between; align-items:center;
+    /* Leaderboard styling */
+    ul#leaderboardList {
+      list-style-type: none;
+      padding-left: 0;
+      margin: 0;
+      font-size: 1.1rem;
     }
-    .rank{font-weight:bold; color:#84cc16;}
+    ul#leaderboardList li {
+      margin: 0.5rem 0;
+      padding: 0.75rem 1rem;
+      background: #1d3b5c;
+      border-radius: 6px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .rank { font-weight:bold; color:#84cc16; }
   </style>
 </head>
 <body>
@@ -68,21 +92,21 @@
   <button class="logout-btn" onclick="logout()">Log Out</button>
 </div>
 
-<!-- POPUP -->
+<!-- LOGIN POPUP -->
 <div id="popupMessage">
   You must be logged in to view the dashboard.
   <span class="close-btn" onclick="this.parentElement.style.display='none'">✕</span>
 </div>
 
 <!-- LEADERBOARD -->
-<div class="auth-box">
-  <h2>🏆 Leaderboard</h2>
+<div class="auth-box" style="max-width: 800px; text-align: center;">
+  <h1 style="margin-bottom: 1rem;">🏆 Leaderboard</h1>
   <ul id="leaderboardList">
     <li>Loading leaderboard...</li>
   </ul>
 </div>
 
-<!-- FIREBASE + JS -->
+<!-- FIREBASE LEADERBOARD LOGIC -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
 import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-database.js";
@@ -98,9 +122,10 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const auth = getAuth(app);
+
 const leaderboardList = document.getElementById("leaderboardList");
 
-// Show/hide login links
+// Show/hide login/signup links
 onAuthStateChanged(auth, user => {
   const isLoggedIn = !!user;
   document.cookie = `loggedIn=${isLoggedIn}; path=/`;
@@ -110,49 +135,64 @@ onAuthStateChanged(auth, user => {
   document.getElementById("loginLinkMobile").style.display = isLoggedIn ? "none" : "block";
 });
 
-// Fetch leaderboard based on linked RFID users
+// Fetch leaderboard based on linked RFIDs
 async function fetchLeaderboard() {
   try {
-    const rfidSnap = await get(ref(db, "rfid_to_user"));
-    const rfidUsers = rfidSnap.val() || {};
-    leaderboardList.innerHTML = "";
+    // 1. Get linked UIDs
+    const linkedSnapshot = await get(ref(db, "linked_uids"));
+    const linkedUsers = linkedSnapshot.val() || {};
+
+    // 2. Map each linked UID to its RFID(s)
     const leaderboardData = [];
 
-    for (const rfid in rfidUsers) {
-      const uid = rfidUsers[rfid];
-      const userSnap = await get(ref(db, `users/${uid}`));
-      const user = userSnap.val();
-      if (user) {
-        leaderboardData.push({ name: user.name || user.email || "User", points: user.points || 0 });
+    for (const uid in linkedUsers) {
+      const rfids = linkedUsers[uid] || [];
+      let totalPoints = 0;
+
+      // 3. Sum points from linked RFIDs
+      for (const rfid of rfids) {
+        const rfidSnapshot = await get(ref(db, `rfid_to_user/${rfid}`));
+        const linkedUid = rfidSnapshot.val();
+        if (linkedUid === uid) {
+          const userSnapshot = await get(ref(db, `users/${uid}`));
+          const points = userSnapshot.val()?.points || 0;
+          totalPoints = points; // Assuming points stored per user; adjust if stored per RFID
+        }
       }
+
+      const userSnapshot = await get(ref(db, `users/${uid}`));
+      const name = userSnapshot.val()?.name || userSnapshot.val()?.email || "User";
+      leaderboardData.push({ name, points: totalPoints });
     }
 
-    if (leaderboardData.length === 0) {
+    // Sort leaderboard
+    leaderboardData.sort((a,b)=> b.points - a.points);
+
+    // Render
+    leaderboardList.innerHTML = "";
+    if(leaderboardData.length === 0) {
       leaderboardList.innerHTML = "<li>No users yet.</li>";
       return;
     }
-
-    leaderboardData.sort((a,b) => b.points - a.points);
-
     leaderboardData.forEach((user,index)=>{
       const trophy = index===0?" 🥇":index===1?" 🥈":index===2?" 🥉":"";
       const li = document.createElement("li");
-      li.innerHTML = `<div><span class="rank">${index+1}</span>${user.name}${trophy}</div><span class="points">${user.points} pts</span>`;
+      li.innerHTML = `<span class="rank">${index+1}</span>. ${user.name}${trophy} <span>${user.points} pts</span>`;
       leaderboardList.appendChild(li);
     });
 
-  } catch(err) {
+  } catch(err){
     console.error("Error fetching leaderboard:", err);
-    leaderboardList.innerHTML = "<li>Unable to load leaderboard.</li>";
+    leaderboardList.innerHTML = "<li>Error fetching leaderboard. Make sure you are logged in.</li>";
   }
 }
 
-// Initial fetch and auto-update
+// Initial fetch and update every 6 seconds
 fetchLeaderboard();
 setInterval(fetchLeaderboard, 6000);
 
 // Helpers
-window.logout = () => signOut(auth).then(()=>{ document.cookie="loggedIn=false; path=/"; window.location.href="login.html"; });
+window.logout = () => signOut(auth).then(()=>{ document.cookie="loggedIn=false; path=/"; location.href="login.html"; });
 window.toggleMobileNav = () => document.getElementById("mobileDropdown").classList.toggle("show");
 function checkLogin(event){
   const isLoggedIn = document.cookie.includes("loggedIn=true");
