@@ -94,45 +94,65 @@
 </div>
 
 <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
-  import { getAuth, onAuthStateChanged, signOut, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
-  import { getDatabase, ref, onValue, get, set, remove } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-database.js";
+ import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
+import { getAuth, onAuthStateChanged, signOut, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
+import { getDatabase, ref, onValue, get, set, update, remove } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-database.js";
 
-  const firebaseConfig = {
-    apiKey: "AIzaSyDW5APPZMu-lojVRNg89ZDBEY14YD77xd4",
-    authDomain: "ecolife--v1.firebaseapp.com",
-    databaseURL: "https://ecolife--v1-default-rtdb.europe-west1.firebasedatabase.app",
-    projectId: "ecolife--v1"
-  };
+// Firebase config
+const firebaseConfig = {
+  apiKey: "AIzaSyDW5APPZMu-lojVRNg89ZDBEY14YD77xd4",
+  authDomain: "ecolife--v1.firebaseapp.com",
+  databaseURL: "https://ecolife--v1-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "ecolife--v1"
+};
 
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-  const db = getDatabase(app);
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getDatabase(app);
 
-  let currentUID = null;
-  let linkedRFID = null;
+let currentUID = null;
+let linkedRFID = null;
 
-  onAuthStateChanged(auth, (user) => {
-    if (user) {
-      // Display Google Name or fallback
-      document.getElementById("name").textContent = user.displayName || user.email || "User";
-      document.getElementById("email").textContent = user.email;
-      document.getElementById("uid").textContent = user.uid;
-      currentUID = user.uid;
+// Helper to fetch points for a UID
+async function fetchUIDPoints(rfid) {
+  if (!rfid) return 0;
 
-      const userRef = ref(db, 'users/' + user.uid);
-      onValue(userRef, (snapshot) => {
-        const data = snapshot.val();
-        linkedRFID = data?.rfid || null;
-        document.getElementById("rfid").textContent = linkedRFID || "Not linked";
-        document.getElementById("unlinkBtn").style.display = linkedRFID ? "block" : "none";
-      });
-    } else {
-      window.location.href = "index.html";
+  // Check linked first
+  const linkedSnap = await get(ref(db, `linked_uids/${rfid}/points`));
+  if (linkedSnap.exists()) return linkedSnap.val();
+
+  // If not linked, check unlinked
+  const unlinkedSnap = await get(ref(db, `unlinked_uids/${rfid}/points`));
+  if (unlinkedSnap.exists()) return unlinkedSnap.val();
+
+  return 0;
+}
+
+onAuthStateChanged(auth, async (user) => {
+  if (!user) { window.location.href = "index.html"; return; }
+
+  currentUID = user.uid;
+  document.getElementById("name").textContent = user.displayName || user.email || "User";
+  document.getElementById("email").textContent = user.email;
+  document.getElementById("uid").textContent = user.uid;
+
+  const userRef = ref(db, 'users/' + user.uid);
+  onValue(userRef, async (snapshot) => {
+    const data = snapshot.val() || {};
+    linkedRFID = data?.rfid || null;
+    document.getElementById("rfid").textContent = linkedRFID || "Not linked";
+    document.getElementById("unlinkBtn").style.display = linkedRFID ? "block" : "none";
+
+    // Fetch points from the UID itself
+    const points = await fetchUIDPoints(linkedRFID);
+    if (linkedRFID) {
+      document.getElementById("rfid").textContent = `${linkedRFID} (Points: ${points})`;
     }
   });
+});
 
-  window.unlinkRFID = async () => {
+// Unlink RFID but keep points in UID
+window.unlinkRFID = async () => {
   if (!currentUID) { alert("You must be logged in to unlink RFID."); return; }
 
   const userRef = ref(db, `users/${currentUID}/rfid`);
@@ -141,51 +161,51 @@
 
   const rfid = snapshot.val();
   try {
-    // Remove RFID from user
+    // Remove RFID and user points
     await update(ref(db, `users/${currentUID}`), { rfid: null, points: 0 });
 
     // Remove from rfid_to_user
     await remove(ref(db, `rfid_to_user/${rfid}`));
 
-    // Move linked_uids back to unlinked_uids
-    const linkedRef = ref(db, `linked_uids/${rfid}`);
-    const linkedSnap = await get(linkedRef);
+    // Move linked UID back to unlinked if it exists
+    const linkedSnap = await get(ref(db, `linked_uids/${rfid}`));
     if (linkedSnap.exists()) {
-      const data = linkedSnap.val();
-      await set(ref(db, `unlinked_uids/${rfid}`), data); // preserves points
-      await remove(linkedRef);
+      const data = linkedSnap.val(); // only points
+      await set(ref(db, `unlinked_uids/${rfid}`), data);
+      await remove(ref(db, `linked_uids/${rfid}`));
     }
 
-    // Update UI
+    linkedRFID = null;
     document.getElementById("rfid").textContent = "Not linked";
     document.getElementById("unlinkBtn").style.display = "none";
-    alert(`RFID ${rfid} unlinked successfully.`);
 
+    alert(`RFID ${rfid} unlinked successfully.`);
   } catch (err) {
-    console.error("Error unlinking RFID:", err);
+    console.error(err);
     alert("Error unlinking RFID: " + err.message);
   }
 };
 
+// Logout
+window.logout = () => signOut(auth).then(() => window.location.href = "index.html");
 
-  // Logout
-  window.logout = () => { signOut(auth).then(() => location.href = "index.html"); };
+// Reset Password
+window.resetPassword = () => {
+  const user = auth.currentUser;
+  if (user?.email) {
+    sendPasswordResetEmail(auth, user.email)
+      .then(() => alert("Password reset email sent to " + user.email))
+      .catch(err => alert("Error: " + err.message));
+  }
+};
 
-  // Reset Password
-  window.resetPassword = () => {
-    const user = auth.currentUser;
-    if (user?.email) {
-      sendPasswordResetEmail(auth, user.email)
-        .then(() => alert("Password reset email sent to " + user.email))
-        .catch(err => alert("Error: " + err.message));
-    }
-  };
+// Mobile nav
+window.toggleMobileNav = () => document.getElementById("mobileDropdown").classList.toggle("show");
 
-  // Mobile nav
-  window.toggleMobileNav = () => { document.getElementById("mobileDropdown").classList.toggle("show"); };
 </script>
 
 </body>
 </html>
+
 
 
