@@ -1,42 +1,46 @@
 <!DOCTYPE html>
 <html lang="en" data-theme="dark">
 <head>
+  <link rel="icon" href="favicon.png" type="image/png">
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Leaderboard – EcoLife</title>
   <link rel="stylesheet" href="style.css" />
   <style>
-    /* Topnav and other layout stays exactly like About Us page */
+    body { background:#0a192a; color:white; font-family:system-ui,sans-serif; margin:0; padding:0; }
 
-    /* Leaderboard styling */
-    ul#leaderboardList {
-      list-style: none;      /* remove bullets/periods */
-      padding-left: 0;       /* remove default padding */
-      margin: 0;             /* remove default margin */
-      font-size: 1.1rem;
+    /* Top nav same as About Us page */
+    .topnav { display:flex; align-items:center; justify-content:space-between; padding:1rem; background-color:#000; color:white; position:relative; z-index:10; }
+    .gear { font-size:1.5rem; cursor:pointer; }
+    .hamburger { display:none; font-size:1.5rem; background:none; border:none; color:white; }
+    @media (max-width:600px){
+      .hamburger{display:block}
+      .nav-dropdown{display:none; position:absolute; right:1rem; top:3.5rem; background:#073763; flex-direction:column; padding:1rem; border-radius:6px; z-index:999;}
+      .nav-dropdown.show{display:flex;}
+      .nav-dropdown a{color:white; margin:0.5rem 0; text-decoration:none;}
+      .nav-dropdown a:hover{text-decoration:underline;}
     }
 
-    ul#leaderboardList li {
-      margin: 0.5rem 0;
-      padding: 0.75rem 1rem;
-      background: #1d3b5c;
-      border-radius: 6px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
+    #settingsPanel{display:none; position:fixed; top:4rem; left:1rem; background:#111; padding:1rem; border-radius:8px; z-index:1001;}
+    .logout-btn{color:red; text-decoration:underline; background:none; border:none; margin-top:1rem; cursor:pointer;}
+    #popupMessage{position:fixed; top:1rem; left:50%; transform:translateX(-50%); background:#ff4444; color:white; padding:0.75rem 1.5rem; border-radius:5px; display:none; z-index:1002;}
+    #popupMessage .close-btn{margin-left:1rem; cursor:pointer;}
 
-    .rank { font-weight: bold; color: #84cc16; margin-right: 0.5rem; }
-    span.points { font-weight: bold; color: #00ff99; }
+    /* Leaderboard list styling */
+    .auth-box{max-width:800px; margin:2rem auto; text-align:center;}
+    ul#leaderboardList{list-style:none; padding:0; margin:0;}
+    ul#leaderboardList li{
+      margin:0.5rem 0; padding:0.75rem 1rem; background:#1d3b5c; border-radius:6px;
+      display:flex; justify-content:space-between; align-items:center;
+    }
+    .rank{font-weight:bold; color:#84cc16;}
   </style>
 </head>
 <body>
 
-<!-- TOP NAVIGATION (same as About Us page) -->
+<!-- TOP NAVIGATION -->
 <nav class="topnav">
-  <div class="nav-left">
-    <span class="gear" onclick="window.location.href='profile.html'">⚙️</span>
-  </div>
+  <div class="nav-left"><span class="gear" onclick="window.location.href='profile.html'">⚙️</span></div>
   <div class="nav-center">EcoLife</div>
   <div class="nav-right desktop-links">
     <a href="index.html">About Us</a>
@@ -59,20 +63,26 @@
   <a href="login.html" id="loginLinkMobile">Login</a>
 </div>
 
-<!-- Login Popup -->
+<!-- SETTINGS PANEL -->
+<div id="settingsPanel">
+  <button class="logout-btn" onclick="logout()">Log Out</button>
+</div>
+
+<!-- POPUP -->
 <div id="popupMessage">
   You must be logged in to view the dashboard.
   <span class="close-btn" onclick="this.parentElement.style.display='none'">✕</span>
 </div>
 
-<!-- Leaderboard Content -->
-<div class="auth-box" style="max-width: 800px; text-align: center;">
-  <h1 style="margin-bottom: 1rem;">🏆 Leaderboard</h1>
+<!-- LEADERBOARD -->
+<div class="auth-box">
+  <h2>🏆 Leaderboard</h2>
   <ul id="leaderboardList">
     <li>Loading leaderboard...</li>
   </ul>
 </div>
 
+<!-- FIREBASE + JS -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
 import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-database.js";
@@ -90,7 +100,7 @@ const db = getDatabase(app);
 const auth = getAuth(app);
 const leaderboardList = document.getElementById("leaderboardList");
 
-// Update login links
+// Show/hide login links
 onAuthStateChanged(auth, user => {
   const isLoggedIn = !!user;
   document.cookie = `loggedIn=${isLoggedIn}; path=/`;
@@ -99,39 +109,33 @@ onAuthStateChanged(auth, user => {
   document.getElementById("signupLinkMobile").style.display = isLoggedIn ? "none" : "block";
   document.getElementById("loginLinkMobile").style.display = isLoggedIn ? "none" : "block";
 });
-//LEADERBOARD
+
+// Fetch leaderboard based on linked RFID users
 async function fetchLeaderboard() {
   try {
-    const rfidSnapshot = await get(ref(db, "rfid_to_user"));
-    const rfidUsers = rfidSnapshot.val() || {};
+    const rfidSnap = await get(ref(db, "rfid_to_user"));
+    const rfidUsers = rfidSnap.val() || {};
     leaderboardList.innerHTML = "";
-
     const leaderboardData = [];
 
-    // For each linked RFID, fetch user info
     for (const rfid in rfidUsers) {
       const uid = rfidUsers[rfid];
-      const userSnapshot = await get(ref(db, `users/${uid}`));
-      const user = userSnapshot.val();
+      const userSnap = await get(ref(db, `users/${uid}`));
+      const user = userSnap.val();
       if (user) {
-        leaderboardData.push({
-          name: user.name || user.email || "User",
-          points: user.points || 0
-        });
+        leaderboardData.push({ name: user.name || user.email || "User", points: user.points || 0 });
       }
     }
-
-    // Sort by points descending
-    leaderboardData.sort((a,b) => b.points - a.points);
 
     if (leaderboardData.length === 0) {
       leaderboardList.innerHTML = "<li>No users yet.</li>";
       return;
     }
 
-    // Display leaderboard
-    leaderboardData.forEach((user, index) => {
-      const trophy = index === 0 ? " 🥇" : index === 1 ? " 🥈" : index === 2 ? " 🥉" : "";
+    leaderboardData.sort((a,b) => b.points - a.points);
+
+    leaderboardData.forEach((user,index)=>{
+      const trophy = index===0?" 🥇":index===1?" 🥈":index===2?" 🥉":"";
       const li = document.createElement("li");
       li.innerHTML = `<div><span class="rank">${index+1}</span>${user.name}${trophy}</div><span class="points">${user.points} pts</span>`;
       leaderboardList.appendChild(li);
@@ -139,12 +143,11 @@ async function fetchLeaderboard() {
 
   } catch(err) {
     console.error("Error fetching leaderboard:", err);
-    leaderboardList.innerHTML = "<li>Must be logged in to view leaderboard.</li>";
+    leaderboardList.innerHTML = "<li>Unable to load leaderboard.</li>";
   }
 }
 
-
-// Initial fetch and auto-update every 6 seconds
+// Initial fetch and auto-update
 fetchLeaderboard();
 setInterval(fetchLeaderboard, 6000);
 
@@ -164,4 +167,3 @@ function checkLogin(event){
 
 </body>
 </html>
-
