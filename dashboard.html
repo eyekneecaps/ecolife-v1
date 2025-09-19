@@ -33,10 +33,9 @@
 <!-- TOP NAVIGATION -->
 <nav class="topnav">
   <div class="nav-left">
-<span class="gear" onclick="window.location.href='profile.html'">⚙️</span>
-
+    <span class="gear" onclick="window.location.href='profile.html'">⚙️</span>
   </div>
-  <div class="nav-center">EcoLife</div>
+  <div class="nav-center"><strong>EcoLife</strong></div>
   <div class="nav-right desktop-links">
     <a href="index.html">About Us</a>
     <a href="products.html">Services</a>
@@ -49,10 +48,11 @@
 <!-- MOBILE DROPDOWN -->
 <div class="nav-dropdown" id="mobileDropdown">
   <a href="index.html">About Us</a>
-    <a href="products.html">Services</a>
+  <a href="products.html">Services</a>
   <a href="dashboard.html" onclick="checkLogin(event)">Dashboard</a>
   <a href="leaderboard.html">Leaderboard</a>
 </div>
+
 <!-- Settings Panel -->
 <div id="settingsPanel" style="display:none;position:fixed;top:4rem;left:1rem;background:#111;padding:1rem;border-radius:8px;z-index:1001;">
   <div id="linkRFIDOption" style="margin-bottom:1rem;">
@@ -95,7 +95,9 @@
 <!-- RFID Modal -->
 <div id="rfidModal" style="display:none;position:fixed;inset:0;align-items:center;justify-content:center;background:rgba(0,0,0,0.6);z-index:1002;">
   <div style="background:#1c1c1c;padding:1.5rem;border-radius:10px;max-width:480px;width:90%;">
-    <div style="display:flex;justify-content:flex-end;"><button onclick="closeRFIDModal()" style="background:none;border:none;color:#fff;font-size:1.2rem;cursor:pointer;">✕</button></div>
+    <div style="display:flex;justify-content:flex-end;">
+      <button onclick="closeRFIDModal()" style="background:none;border:none;color:#fff;font-size:1.2rem;cursor:pointer;">✕</button>
+    </div>
     <h3>Enter RFID UID</h3>
     <input id="modalRfidInput" placeholder="Enter RFID UID" />
     <div style="margin-top:0.75rem;">
@@ -108,7 +110,7 @@
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
-import { getDatabase, ref, get, update, remove, onValue, set } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-database.js";
+import { getDatabase, ref, get, update, remove, onValue } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-database.js";
 import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
 
 const firebaseConfig = {
@@ -154,23 +156,24 @@ onAuthStateChanged(auth, async (user) => {
   userNameEl.textContent = user.displayName || "User";
   userIdEl.textContent = user.uid;
 
-  // Fetch user data
+  // Live listener for user data
   const userRef = ref(db, `users/${user.uid}`);
-onValue(userRef, (snap) => {
-  if (!snap.exists()) return;
-  const data = snap.val();
+  onValue(userRef, (snap) => {
+    if (!snap.exists()) return;
+    const data = snap.val();
 
-  currentUserRFID = data?.rfid || null;
-  linkedRFIDEl.textContent = currentUserRFID || "Not linked";
-  userPointsEl.textContent = data?.points || 0;
+    currentUserRFID = data?.rfid || null;
+    linkedRFIDEl.textContent = currentUserRFID || "Not linked";
+    userPointsEl.textContent = data?.points || 0;
 
-  if (!currentUserRFID) {
-    rfidSection.style.display = "block";
-  } else {
-    rfidSection.style.display = "none";
-  }
+    if (!currentUserRFID) {
+      rfidSection.style.display = "block";
+    } else {
+      rfidSection.style.display = "none";
+    }
 
-  updateDashboardTable(data);
+    updateDashboardTable(data);
+  });
 });
 
 function updateDashboardTable(userData){
@@ -232,7 +235,6 @@ function openRFIDModal(){ rfidModal.style.display="flex"; modalRfidInput.value="
 function closeRFIDModal(){ rfidModal.style.display="none"; }
 window.openRFIDModal=openRFIDModal;
 window.closeRFIDModal=closeRFIDModal;
-
 </script>
 
 </body>
