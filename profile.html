@@ -132,33 +132,41 @@
     }
   });
 
-  // Unlink RFID
   window.unlinkRFID = async () => {
-    if (!currentUID) { alert("You must be logged in to unlink RFID."); return; }
+  if (!currentUID) { alert("You must be logged in to unlink RFID."); return; }
 
-    const userRef = ref(db, `users/${currentUID}/rfid`);
-    const snapshot = await get(userRef);
-    if (!snapshot.exists()) { alert("No RFID linked to this account."); return; }
+  const userRef = ref(db, `users/${currentUID}/rfid`);
+  const snapshot = await get(userRef);
+  if (!snapshot.exists()) { alert("No RFID linked to this account."); return; }
 
-    const rfid = snapshot.val();
-    try {
-      await remove(userRef);
-      await remove(ref(db, `rfid_to_user/${rfid}`));
-      const linkedRef = ref(db, `linked_uids/${rfid}`);
-      const linkedSnap = await get(linkedRef);
-      if (linkedSnap.exists()) {
-        const data = linkedSnap.val();
-        await set(ref(db, `unlinked_uids/${rfid}`), data);
-        await remove(linkedRef);
-      }
-      document.getElementById("rfid").textContent = "Not linked";
-      document.getElementById("unlinkBtn").style.display = "none";
-      alert("RFID unlinked successfully.");
-    } catch (err) {
-      console.error("Error unlinking RFID:", err);
-      alert("Error unlinking RFID: " + err.message);
+  const rfid = snapshot.val();
+  try {
+    // Remove RFID from user
+    await update(ref(db, `users/${currentUID}`), { rfid: null, points: 0 });
+
+    // Remove from rfid_to_user
+    await remove(ref(db, `rfid_to_user/${rfid}`));
+
+    // Move linked_uids back to unlinked_uids
+    const linkedRef = ref(db, `linked_uids/${rfid}`);
+    const linkedSnap = await get(linkedRef);
+    if (linkedSnap.exists()) {
+      const data = linkedSnap.val();
+      await set(ref(db, `unlinked_uids/${rfid}`), data); // preserves points
+      await remove(linkedRef);
     }
-  };
+
+    // Update UI
+    document.getElementById("rfid").textContent = "Not linked";
+    document.getElementById("unlinkBtn").style.display = "none";
+    alert(`RFID ${rfid} unlinked successfully.`);
+
+  } catch (err) {
+    console.error("Error unlinking RFID:", err);
+    alert("Error unlinking RFID: " + err.message);
+  }
+};
+
 
   // Logout
   window.logout = () => { signOut(auth).then(() => location.href = "index.html"); };
@@ -179,4 +187,5 @@
 
 </body>
 </html>
+
 
