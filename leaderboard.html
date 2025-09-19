@@ -1,131 +1,44 @@
 <!DOCTYPE html>
 <html lang="en" data-theme="dark">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Leaderboard – EcoLife</title>
-<style>
-  /* General */
-  body {
-    background: #0a192a;
-    color: white;
-    font-family: system-ui, sans-serif;
-    margin: 0;
-    padding: 0;
-  }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Leaderboard – EcoLife</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    /* Topnav and other layout stays exactly like About Us page */
 
-  /* Top navigation */
-  .topnav {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 1rem;
-    background: #000;
-    color: white;
-  }
-  .nav-center { font-size: 1.5rem; }
-  .gear { font-size: 1.5rem; cursor: pointer; }
-  .nav-links { display: flex; gap: 1rem; }
-  .nav-links a { color: white; text-decoration: none; }
-  .nav-links a:hover { text-decoration: underline; }
-  .hamburger { display: none; font-size: 1.5rem; background: none; border: none; color: white; }
-
-  /* Mobile nav */
-  @media(max-width:600px){
-    .hamburger { display: block; }
-    .nav-links { display: none; }
-    .nav-dropdown {
-      display: none;
-      position: absolute;
-      right: 1rem;
-      top: 3.5rem;
-      background: #073763;
-      flex-direction: column;
-      padding: 1rem;
-      border-radius: 6px;
-      z-index: 999;
+    /* Leaderboard styling */
+    ul#leaderboardList {
+      list-style: none;      /* remove bullets/periods */
+      padding-left: 0;       /* remove default padding */
+      margin: 0;             /* remove default margin */
+      font-size: 1.1rem;
     }
-    .nav-dropdown.show { display: flex; }
-    .nav-dropdown a { color: white; margin: 0.5rem 0; text-decoration: none; }
-  }
 
-  /* Settings panel */
-  #settingsPanel {
-    display: none;
-    position: fixed;
-    top: 4rem;
-    left: 1rem;
-    background: #111;
-    padding: 1rem;
-    border-radius: 8px;
-    z-index: 1001;
-  }
-  .logout-btn {
-    color: red;
-    background: none;
-    border: none;
-    text-decoration: underline;
-    cursor: pointer;
-    margin-top: 1rem;
-  }
+    ul#leaderboardList li {
+      margin: 0.5rem 0;
+      padding: 0.75rem 1rem;
+      background: #1d3b5c;
+      border-radius: 6px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
 
-  /* Popup message */
-  #popupMessage {
-    position: fixed;
-    top: 1rem;
-    left: 50%;
-    transform: translateX(-50%);
-    background: #ff4444;
-    color: white;
-    padding: 0.75rem 1.5rem;
-    border-radius: 5px;
-    display: none;
-    z-index: 1002;
-  }
-
-  /* Leaderboard container */
-  .auth-box {
-    max-width: 700px;
-    margin: 2rem auto;
-    text-align: center;
-  }
-  .auth-box h2 { margin-bottom: 1.5rem; }
-
-  /* Leaderboard list */
-  ul#leaderboardList {
-    list-style: none;       /* remove bullets */
-    padding: 0;             /* remove default padding */
-    margin: 0;              /* remove default margin */
-    font-size: 1.1rem;
-  }
-  ul#leaderboardList li {
-    list-style: none;       /* extra safety */
-    margin: 0.5rem 0;
-    padding: 0.75rem 1rem;
-    background: #1d3b5c;
-    border-radius: 6px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    transition: transform 0.2s, background 0.2s;
-  }
-  ul#leaderboardList li:hover {
-    transform: translateY(-2px);
-    background: #27507d;
-  }
-
-  .rank { font-weight: bold; color: #84cc16; margin-right: 0.5rem; }
-  span.points { font-weight: bold; color: #00ff99; }
-
-</style>
+    .rank { font-weight: bold; color: #84cc16; margin-right: 0.5rem; }
+    span.points { font-weight: bold; color: #00ff99; }
+  </style>
 </head>
 <body>
 
-<!-- Top nav -->
+<!-- TOP NAVIGATION (same as About Us page) -->
 <nav class="topnav">
-  <div class="nav-left"><span class="gear" onclick="window.location.href='profile.html'">⚙️</span></div>
+  <div class="nav-left">
+    <span class="gear" onclick="window.location.href='profile.html'">⚙️</span>
+  </div>
   <div class="nav-center">EcoLife</div>
-  <div class="nav-right nav-links">
+  <div class="nav-right desktop-links">
     <a href="index.html">About Us</a>
     <a href="products.html">Services</a>
     <a href="dashboard.html" onclick="checkLogin(event)">Dashboard</a>
@@ -136,7 +49,7 @@
   <button class="hamburger" onclick="toggleMobileNav()">☰</button>
 </nav>
 
-<!-- Mobile dropdown -->
+<!-- MOBILE DROPDOWN -->
 <div class="nav-dropdown" id="mobileDropdown">
   <a href="index.html">About Us</a>
   <a href="products.html">Services</a>
@@ -146,26 +59,20 @@
   <a href="login.html" id="loginLinkMobile">Login</a>
 </div>
 
-<!-- Settings -->
-<div id="settingsPanel">
-  <button class="logout-btn" onclick="logout()">Log Out</button>
-</div>
-
-<!-- Popup -->
+<!-- Login Popup -->
 <div id="popupMessage">
   You must be logged in to view the dashboard.
   <span class="close-btn" onclick="this.parentElement.style.display='none'">✕</span>
 </div>
 
-<!-- Leaderboard -->
-<div class="auth-box">
-  <h2>🏆 Leaderboard</h2>
+<!-- Leaderboard Content -->
+<div class="auth-box" style="max-width: 800px; text-align: center;">
+  <h1 style="margin-bottom: 1rem;">🏆 Leaderboard</h1>
   <ul id="leaderboardList">
     <li>Loading leaderboard...</li>
   </ul>
 </div>
 
-<!-- Scripts -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
 import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-database.js";
