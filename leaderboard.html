@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en" data-theme="dark">
 <head>
-<meta charset="UTF-8">
+<meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Leaderboard – EcoLife</title>
-<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="style.css" />
 <style>
   body { background:#0a192a; color:white; font-family:system-ui,sans-serif; margin:0; padding:0; }
   .topnav { display:flex; justify-content:space-between; align-items:center; padding:1rem; background:#000; color:white; }
@@ -14,7 +14,13 @@
   .nav-links a { color:white; text-decoration:none; }
   .nav-links a:hover { text-decoration:underline; }
   .hamburger { display:none; font-size:1.5rem; background:none; border:none; color:white; }
-  @media(max-width:600px){.hamburger{display:block}.nav-links{display:none}.nav-dropdown{display:none;position:absolute;right:1rem;top:3.5rem;background:#073763;flex-direction:column;padding:1rem;border-radius:6px;z-index:999}.nav-dropdown.show{display:flex}.nav-dropdown a{color:white;margin:0.5rem 0;text-decoration:none}}
+  @media(max-width:600px){
+    .hamburger{display:block}
+    .nav-links{display:none}
+    .nav-dropdown{display:none;position:absolute;right:1rem;top:3.5rem;background:#073763;flex-direction:column;padding:1rem;border-radius:6px;z-index:999}
+    .nav-dropdown.show{display:flex}
+    .nav-dropdown a{color:white;margin:0.5rem 0;text-decoration:none}
+  }
   #settingsPanel{display:none;position:fixed;top:4rem;left:1rem;background:#111;padding:1rem;border-radius:8px;z-index:1001;}
   .logout-btn{color:red;background:none;border:none;text-decoration:underline;cursor:pointer;margin-top:1rem;}
   #popupMessage{position:fixed;top:1rem;left:50%;transform:translateX(-50%);background:#ff4444;color:white;padding:0.75rem 1.5rem;border-radius:5px;display:none;z-index:1002;}
@@ -25,7 +31,6 @@
 </head>
 <body>
 
-<!-- NAVIGATION -->
 <nav class="topnav">
   <div class="nav-left"><span class="gear" onclick="window.location.href='profile.html'">⚙️</span></div>
   <div class="nav-center">EcoLife</div>
@@ -40,7 +45,6 @@
   <button class="hamburger" onclick="toggleMobileNav()">☰</button>
 </nav>
 
-<!-- MOBILE NAV -->
 <div class="nav-dropdown" id="mobileDropdown">
   <a href="index.html">About Us</a>
   <a href="products.html">Services</a>
@@ -50,18 +54,15 @@
   <a href="login.html" id="loginLinkMobile">Login</a>
 </div>
 
-<!-- SETTINGS -->
 <div id="settingsPanel">
   <button class="logout-btn" onclick="logout()">Log Out</button>
 </div>
 
-<!-- POPUP -->
 <div id="popupMessage">
   You must be logged in to view the dashboard.
   <span class="close-btn" onclick="this.parentElement.style.display='none'">✕</span>
 </div>
 
-<!-- LEADERBOARD CONTENT -->
 <div class="auth-box" style="max-width:700px;margin:2rem auto;text-align:center;">
   <h2>🏆 Leaderboard</h2>
   <ul id="leaderboardList">
@@ -84,10 +85,9 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const auth = getAuth(app);
-
 const leaderboardList = document.getElementById("leaderboardList");
 
-// LOGIN STATE
+// Update login links
 onAuthStateChanged(auth, user => {
   const isLoggedIn = !!user;
   document.cookie = `loggedIn=${isLoggedIn}; path=/`;
@@ -97,41 +97,38 @@ onAuthStateChanged(auth, user => {
   document.getElementById("loginLinkMobile").style.display = isLoggedIn ? "none" : "block";
 });
 
-// FETCH LEADERBOARD FUNCTION
-async function fetchLeaderboard(){
+// Fetch leaderboard
+async function fetchLeaderboard() {
   try {
     const snapshot = await get(ref(db, "users"));
     const users = snapshot.val() || {};
     leaderboardList.innerHTML = "";
 
-    // Sort users by points descending
-    const sortedUsers = Object.values(users)
-      .filter(u => u.name)             // only users with a name
-      .sort((a,b)=> (b.points||0) - (a.points||0));
+    const sortedUsers = Object.values(users).sort((a,b)=> (b.points||0)-(a.points||0));
 
-    if(sortedUsers.length===0){
-      leaderboardList.innerHTML="<li>No users yet.</li>";
-      return;
+    if(sortedUsers.length === 0){ 
+      leaderboardList.innerHTML = "<li>No users yet.</li>"; 
+      return; 
     }
 
     sortedUsers.forEach((user,index)=>{
       const trophy = index===0?" 🥇":index===1?" 🥈":index===2?" 🥉":"";
+      const displayName = user.name || user.email || "User"; // fallback if no name
       const li = document.createElement("li");
-      li.innerHTML = `<span class="rank">${index+1}</span>. ${user.name}${trophy} <span>${user.points||0} pts</span>`;
+      li.innerHTML = `<span class="rank">${index+1}</span>. ${displayName}${trophy} <span>${user.points||0} pts</span>`;
       leaderboardList.appendChild(li);
     });
-
-  } catch(err){
-    leaderboardList.innerHTML="<li>Error fetching leaderboard.</li>";
+  } catch(err) {
     console.error("Error fetching leaderboard:", err);
+    leaderboardList.innerHTML="<li>Error loading leaderboard.</li>";
   }
 }
 
-// Fetch every 6 seconds
+// Initial fetch and auto-update every 6 seconds
 fetchLeaderboard();
 setInterval(fetchLeaderboard, 6000);
 
-// HELPERS
+// Helpers
 window.logout = () => signOut(auth).then(()=>{ document.cookie="loggedIn=false; path=/"; window.location.href="login.html"; });
 window.toggleMobileNav = () => document.getElementById("mobileDropdown").classList.toggle("show");
 function checkLogin(event){
