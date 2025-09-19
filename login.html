@@ -1,36 +1,33 @@
 <!DOCTYPE html>
 <html lang="en" data-theme="dark">
 <head>
-    <link rel="icon" href="favicon.png" type="image/png">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Login – EcoLife</title>
   <link rel="stylesheet" href="style.css">
   <style>
-    /* Keep your previous look */
-    body { font-family: system-ui, sans-serif; margin: 0; padding: 0; background: #0a192a; color: white; }
-    .topnav { display: flex; justify-content: space-between; align-items: center; padding: 1rem; background-color: #000; }
-    .gear { font-size: 1.5rem; cursor: pointer; color: white; }
-    .hamburger { display: none; font-size: 1.5rem; background: none; border: none; color: white; }
-    @media (max-width: 600px) {
-      .hamburger { display: block; }
-      .nav-dropdown { display: none; position: absolute; right: 1rem; top: 3.5rem; background: #073763; flex-direction: column; padding: 1rem; border-radius: 6px; z-index: 999; }
-      .nav-dropdown.show { display: flex; }
-      .nav-dropdown a { color: white; margin: 0.5rem 0; text-decoration: none; }
+    body { font-family: system-ui, sans-serif; margin:0; padding:0; background:#0a192a; color:white; }
+    .topnav { display:flex; justify-content:space-between; align-items:center; padding:1rem; background:#000; }
+    .gear { font-size:1.5rem; cursor:pointer; color:white; }
+    .hamburger { display:none; font-size:1.5rem; background:none; border:none; color:white; }
+    @media(max-width:600px){
+      .hamburger{display:block}
+      .nav-dropdown{display:none;position:absolute;right:1rem;top:3.5rem;background:#073763;flex-direction:column;padding:1rem;border-radius:6px;z-index:999}
+      .nav-dropdown.show{display:flex}
+      .nav-dropdown a{color:white;margin:0.5rem 0;text-decoration:none}
     }
-    .auth-box { max-width: 400px; margin: 6rem auto; padding: 2rem; background: #07121f; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.5); }
-    .auth-box h2 { text-align: center; margin-bottom: 1.5rem; }
-    .auth-box input { width: 100%; margin-bottom: 1rem; padding: 0.8rem; border-radius: 6px; border: 1px solid #444; background: #111; color: white; }
-    .auth-box button { width: 100%; padding: 0.8rem; background: #00ff99; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; margin-bottom: 1rem; }
-    .auth-box button:hover { background: #00cc7a; }
-    .error-message { color: #ff5555; margin-bottom: 1rem; font-size: 0.9rem; text-align: center; }
-    .google-btn { background: #4285F4; color: white; margin-bottom: 1rem; }
-    .google-btn:hover { background: #357ae8; }
+    .auth-box { max-width:400px;margin:6rem auto;padding:2rem;background:#07121f;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.5); }
+    .auth-box h2 { text-align:center;margin-bottom:1.5rem; }
+    .auth-box input { width:100%;margin-bottom:1rem;padding:0.8rem;border-radius:6px;border:1px solid #444;background:#111;color:white; }
+    .auth-box button { width:100%;padding:0.8rem;background:#00ff99;border:none;border-radius:6px;font-weight:bold;cursor:pointer;margin-bottom:1rem; }
+    .auth-box button:hover { background:#00cc7a; }
+    .error-message { color:#ff5555;margin-bottom:1rem;font-size:0.9rem;text-align:center; }
+    .google-btn { background:#4285F4;color:white;margin-bottom:1rem; }
+    .google-btn:hover { background:#357ae8; }
   </style>
 </head>
 <body>
 
-<!-- TOP NAVIGATION -->
 <nav class="topnav">
   <div class="nav-left"><span class="gear" onclick="toggleSettings()">⚙️</span></div>
   <div class="nav-center">EcoLife</div>
@@ -45,7 +42,6 @@
   <button class="hamburger" onclick="toggleMobileNav()">☰</button>
 </nav>
 
-<!-- MOBILE DROPDOWN -->
 <div class="nav-dropdown" id="mobileDropdown">
   <a href="index.html">About Us</a>
   <a href="products.html">Services</a>
@@ -55,12 +51,10 @@
   <a href="login.html" id="loginLinkMobile">Login</a>
 </div>
 
-<!-- SETTINGS PANEL -->
-<div id="settingsPanel" style="display:none; position:fixed; top:4rem; left:1rem; background:#111; padding:1rem; border-radius:8px; z-index:1001;">
-  <button onclick="logout()" style="color:red; background:none; border:none; text-decoration:underline; cursor:pointer;">Log Out</button>
+<div id="settingsPanel" style="display:none;position:fixed;top:4rem;left:1rem;background:#111;padding:1rem;border-radius:8px;z-index:1001;">
+  <button onclick="logout()" style="color:red;background:none;border:none;text-decoration:underline;cursor:pointer;">Log Out</button>
 </div>
 
-<!-- LOGIN BOX -->
 <div class="auth-box">
   <h2>Sign In</h2>
   <div class="error-message" id="loginError"></div>
@@ -70,71 +64,99 @@
     <button type="submit">Login</button>
   </form>
   <button class="google-btn" id="googleLoginBtn">Sign in with Google</button>
-  <p style="text-align:center;">Don’t have an account? <a href="signup.html" style="color:#00ff99; font-weight:bold;">Create one</a></p>
+  <p style="text-align:center;">Don’t have an account? <a href="signup.html" style="color:#00ff99;font-weight:bold;">Create one</a></p>
 </div>
 
-<!-- FIREBASE -->
 <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { getAuth, signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getAuth, signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, updateProfile } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getDatabase, ref, set, get, child } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
-  const firebaseConfig = {
-    apiKey: "AIzaSyDW5APPZMu-lojVRNg89ZDBEY14YD77xd4",
-    authDomain: "ecolife--v1.firebaseapp.com",
-    databaseURL: "https://ecolife--v1-default-rtdb.europe-west1.firebasedatabase.app",
-    projectId: "ecolife--v1"
-  };
+const firebaseConfig = {
+  apiKey: "AIzaSyDW5APPZMu-lojVRNg89ZDBEY14YD77xd4",
+  authDomain: "ecolife--v1.firebaseapp.com",
+  databaseURL: "https://ecolife--v1-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "ecolife--v1"
+};
 
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getDatabase(app);
 
-  const loginForm = document.getElementById("loginForm");
-  const loginError = document.getElementById("loginError");
+const loginForm = document.getElementById("loginForm");
+const loginError = document.getElementById("loginError");
 
-  // Email/Password Login
-  loginForm.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const email = document.getElementById("loginEmail").value.trim();
-    const password = document.getElementById("loginPassword").value;
-    loginError.textContent = "";
-    try {
-      await signInWithEmailAndPassword(auth, email, password);
-      document.cookie = "loggedIn=true; path=/";
-      window.location.href = "dashboard.html";
-    } catch (err) {
-      loginError.textContent = "Incorrect email or password.";
+// Email/Password Login
+loginForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const email = document.getElementById("loginEmail").value.trim();
+  const password = document.getElementById("loginPassword").value;
+  loginError.textContent = "";
+  try {
+    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    const user = userCredential.user;
+
+    // Check if name exists in DB, if not prompt
+    const snapshot = await get(child(ref(db), `users/${user.uid}`));
+    if (!snapshot.exists() || !snapshot.val().name) {
+      const name = prompt("Enter your full name:");
+      await updateProfile(user, { displayName: name });
+      await set(ref(db, 'users/' + user.uid), { name: name, email: email, points: 0 });
     }
-  });
 
-  // Google Login
-  const googleBtn = document.getElementById("googleLoginBtn");
-  googleBtn.addEventListener("click", async () => {
-    const provider = new GoogleAuthProvider();
-    try {
-      await signInWithPopup(auth, provider);
-      document.cookie = "loggedIn=true; path=/";
-      window.location.href = "dashboard.html";
-    } catch (err) {
-      loginError.textContent = "Google login failed. Make sure your domain is authorized.";
-      console.error(err);
+    document.cookie = "loggedIn=true; path=/";
+    window.location.href = "dashboard.html";
+  } catch (err) {
+    loginError.textContent = "Incorrect email or password.";
+  }
+});
+
+// Google Login
+const googleBtn = document.getElementById("googleLoginBtn");
+googleBtn.addEventListener("click", async () => {
+  const provider = new GoogleAuthProvider();
+  try {
+    const result = await signInWithPopup(auth, provider);
+    const user = result.user;
+
+    // Check if name exists, prompt if missing
+    let name = user.displayName;
+    if (!name) {
+      name = prompt("Enter your full name:");
+      await updateProfile(user, { displayName: name });
     }
-  });
+
+    const snapshot = await get(child(ref(db), `users/${user.uid}`));
+    if (!snapshot.exists()) {
+      await set(ref(db, 'users/' + user.uid), { name: name, email: user.email, points: 0 });
+    }
+
+    document.cookie = "loggedIn=true; path=/";
+    window.location.href = "dashboard.html";
+
+  } catch (err) {
+    loginError.textContent = "Google login failed.";
+    console.error(err);
+  }
+});
 </script>
 
 <script>
-  function toggleSettings() { document.getElementById("settingsPanel").classList.toggle("show"); }
-  function toggleMobileNav() { document.getElementById("mobileDropdown").classList.toggle("show"); }
+function toggleSettings() { document.getElementById("settingsPanel").classList.toggle("show"); }
+function toggleMobileNav() { document.getElementById("mobileDropdown").classList.toggle("show"); }
+function logout() {
+  document.cookie = "loggedIn=false; path=/";
+  window.location.href = "login.html";
+}
 
-  function logout() {
-    document.cookie = "loggedIn=false; path=/";
-    window.location.href = "login.html";
-  }
-
-  const isLoggedIn = document.cookie.includes("loggedIn=true");
-  document.getElementById("signupLink").style.display = isLoggedIn ? "none" : "inline";
-  document.getElementById("loginLink").style.display = isLoggedIn ? "none" : "inline";
-  if (document.getElementById("signupLinkMobile")) {
-    document.getElementById("signupLinkMobile").style.display = isLoggedIn ? "none" : "block";
-    document.getElementById("loginLinkMobile").style.display = isLoggedIn ? "none" : "block";
-  }
+// Update nav links
+const isLoggedIn = document.cookie.includes("loggedIn=true");
+document.getElementById("signupLink").style.display = isLoggedIn ? "none" : "inline";
+document.getElementById("loginLink").style.display = isLoggedIn ? "none" : "inline";
+if (document.getElementById("signupLinkMobile")) {
+  document.getElementById("signupLinkMobile").style.display = isLoggedIn ? "none" : "block";
+  document.getElementById("loginLinkMobile").style.display = isLoggedIn ? "none" : "block";
+}
 </script>
+</body>
+</html>
