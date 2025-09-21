@@ -178,11 +178,14 @@
             <li>Loading leaderboard...</li>
         </ul>
     </div>
-
- <script type="module">
+<script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
-  import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-database.js";
-  import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
+  import {
+    getDatabase, ref, onValue
+  } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-database.js";
+  import {
+    getAuth, onAuthStateChanged, signOut
+  } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyDW5APPZMu-lojVRNg89ZDBEY14YD77xd4",
@@ -196,7 +199,7 @@
   const auth = getAuth(app);
   const leaderboardList = document.getElementById("leaderboardList");
 
-  // auth-driven nav toggles (optional)
+  // ---------- Auth-driven nav ----------
   onAuthStateChanged(auth, user => {
     const isLoggedIn = !!user;
     document.cookie = `loggedIn=${isLoggedIn}; path=/`;
@@ -207,82 +210,76 @@
     show("loginLinkMobile",  !isLoggedIn);
   });
 
-  // helper: build leaderboard entries from multiple sources
-  async function fetchLeaderboard() {
-    try {
-      // pull everything we might need
-      const [usersSnap, mapSnap, linkedSnap, unlinkedSnap] = await Promise.all([
-        get(ref(db, "users")),           // users/<userId> { name/email/points?, rfid_uid? }
-        get(ref(db, "rfid_to_user")),    // rfid_to_user/<UID> -> <userId>
-        get(ref(db, "linked_uids")),     // linked_uids/<UID> { points, ... }
-        get(ref(db, "_unlinked_uids")),  // _unlinked_uids/<UID> { points, ... }
-      ]);
+  // ---------- Live data caches ----------
+  let users = {};
+  let rfidToUser = {};
+  let linked = {};
+  let unlinked = {};
 
-      const users = usersSnap.val() || {};
-      const rfidToUser = mapSnap.val() || {};
-      const linked = linkedSnap.val() || {};
-      const unlinked = unlinkedSnap.val() || {};
+  // Debounced re-render to avoid thrash on burst updates
+  let renderTimer = null;
+  function scheduleRender() {
+    if (renderTimer) return;
+    renderTimer = setTimeout(() => { renderTimer = null; render(); }, 50);
+  }
 
-      // 1) start with users (if they already have points)
-      const entries = new Map(); // key: displayId, value: {name, points}
-      for (const [userId, u] of Object.entries(users)) {
-        const name = u?.name || u?.email || `User ${userId.slice(0,6)}`;
-        const pts  = Number(u?.points || 0);
-        entries.set(`user:${userId}`, { name, points: pts });
-      }
+  // Attach real-time listeners
+  onValue(ref(db, "users"),           snap => { users = snap.val() || {}; scheduleRender(); });
+  onValue(ref(db, "rfid_to_user"),    snap => { rfidToUser = snap.val() || {}; scheduleRender(); });
+  onValue(ref(db, "linked_uids"),     snap => { linked = snap.val() || {}; scheduleRender(); });
+  onValue(ref(db, "_unlinked_uids"),  snap => { unlinked = snap.val() || {}; scheduleRender(); });
 
-      // 2) fold in linked_uids; if UID maps to a user, apply to that user
-      for (const [uid, obj] of Object.entries(linked)) {
-        const pts = Number(obj?.points || 0);
-        const mappedUser = rfidToUser?.[uid];
-        if (mappedUser && users[mappedUser]) {
-          const key = `user:${mappedUser}`;
-          const prev = entries.get(key) || { name: users[mappedUser].name || users[mappedUser].email || `User ${mappedUser.slice(0,6)}`, points: 0 };
-          // choose the larger (assuming score is absolute), or add – your call:
-          entries.set(key, { name: prev.name, points: Math.max(prev.points, pts) });
-        } else {
-          // show by UID if no user mapping
-          const key = `uid:${uid}`;
-          const prev = entries.get(key) || { name: `UID ${uid}`, points: 0 };
-          entries.set(key, { name: prev.name, points: Math.max(prev.points, pts) });
-        }
-      }
+  // ---------- Merge + render ----------
+  function render() {
+    const entries = new Map(); // key -> {name, points}
 
-      // 3) optional: show unlinked_uids too (as UID entries)
-      for (const [uid, obj] of Object.entries(unlinked)) {
-        const pts = Number(obj?.points || 0);
+    // 1) seed with users (points may be null)
+    for (const [userId, u] of Object.entries(users)) {
+      const name = (u && (u.name || u.email)) || `User ${userId.slice(0,6)}`;
+      const pts  = Number(u?.points || 0);
+      entries.set(`user:${userId}`, { name, points: pts });
+    }
+
+    // 2) fold in linked_uids: if UID maps to a user, apply to that user
+    for (const [uid, obj] of Object.entries(linked)) {
+      const pts = Number(obj?.points || 0);
+      const mappedUser = rfidToUser?.[uid];
+      if (mappedUser && users[mappedUser]) {
+        const key = `user:${mappedUser}`;
+        const prev = entries.get(key) || { name: (users[mappedUser].name || users[mappedUser].email || `User ${mappedUser.slice(0,6)}`), points: 0 };
+        // treat points as absolute; keep the larger (change to + if you want sum)
+        entries.set(key, { name: prev.name, points: Math.max(prev.points, pts) });
+      } else {
         const key = `uid:${uid}`;
         const prev = entries.get(key) || { name: `UID ${uid}`, points: 0 };
         entries.set(key, { name: prev.name, points: Math.max(prev.points, pts) });
       }
-
-      // render
-      const sorted = [...entries.values()]
-        .sort((a, b) => (b.points || 0) - (a.points || 0));
-
-      leaderboardList.innerHTML = "";
-      if (sorted.length === 0) {
-        leaderboardList.innerHTML = "<li>No data yet.</li>";
-        return;
-      }
-      sorted.forEach((row, i) => {
-        const trophy = i===0 ? " 🥇" : i===1 ? " 🥈" : i===2 ? " 🥉" : "";
-        const li = document.createElement("li");
-        li.innerHTML = `<span class="rank">${i+1}</span>. ${row.name}${trophy} <span>${row.points||0} pts</span>`;
-        leaderboardList.appendChild(li);
-      });
-
-    } catch (err) {
-      console.error("Leaderboard error:", err);
-      leaderboardList.innerHTML = "<li>Unable to load leaderboard (check DB rules & connection).</li>";
     }
+
+    // 3) include unlinked_uids as UID rows
+    for (const [uid, obj] of Object.entries(unlinked)) {
+      const pts = Number(obj?.points || 0);
+      const key = `uid:${uid}`;
+      const prev = entries.get(key) || { name: `UID ${uid}`, points: 0 };
+      entries.set(key, { name: prev.name, points: Math.max(prev.points, pts) });
+    }
+
+    // sort + paint
+    const sorted = [...entries.values()].sort((a,b) => (b.points||0) - (a.points||0));
+    leaderboardList.innerHTML = "";
+    if (sorted.length === 0) {
+      leaderboardList.innerHTML = "<li>No data yet.</li>";
+      return;
+    }
+    sorted.forEach((row, i) => {
+      const trophy = i===0 ? " 🥇" : i===1 ? " 🥈" : i===2 ? " 🥉" : "";
+      const li = document.createElement("li");
+      li.innerHTML = `<span class="rank">${i+1}</span>. ${row.name}${trophy} <span>${row.points||0} pts</span>`;
+      leaderboardList.appendChild(li);
+    });
   }
 
-  // initial + refresh (polling). you can switch to onValue listeners later.
-  fetchLeaderboard();
-  setInterval(fetchLeaderboard, 6000);
-
-  // helpers exposed to window (your page already uses these)
+  // ---------- Helpers already used by your page ----------
   window.logout = () => signOut(auth).then(() => { document.cookie="loggedIn=false; path=/"; location.href="login.html"; });
   window.toggleMobileNav = () => document.getElementById("mobileDropdown").classList.toggle("show");
   window.checkLogin = (event) => {
@@ -297,6 +294,7 @@
 
 </body>
 </html>
+
 
 
 
