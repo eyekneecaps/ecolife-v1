@@ -68,78 +68,104 @@
 </div>
 
 <script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getAuth, signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, updateProfile } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { getDatabase, ref, set, get, child } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
+  import {
+    getAuth, signInWithEmailAndPassword, GoogleAuthProvider,
+    signInWithPopup, updateProfile, onAuthStateChanged
+  } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
+  import {
+    getDatabase, ref, get, child, update
+  } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-database.js";
 
-const firebaseConfig = {
-  apiKey: "AIzaSyDW5APPZMu-lojVRNg89ZDBEY14YD77xd4",
-  authDomain: "ecolife--v1.firebaseapp.com",
-  databaseURL: "https://ecolife--v1-default-rtdb.europe-west1.firebasedatabase.app",
-  projectId: "ecolife--v1"
-};
+  const firebaseConfig = {
+    apiKey: "AIzaSyDW5APPZMu-lojVRNg89ZDBEY14YD77xd4",
+    authDomain: "ecolife--v1.firebaseapp.com",
+    databaseURL: "https://ecolife--v1-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId: "ecolife--v1"
+  };
 
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getDatabase(app);
+  const app  = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db   = getDatabase(app);
 
-const loginForm = document.getElementById("loginForm");
-const loginError = document.getElementById("loginError");
+  const loginForm  = document.getElementById("loginForm");
+  const loginError = document.getElementById("loginError");
 
-// Email/Password Login
-loginForm.addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const email = document.getElementById("loginEmail").value.trim();
-  const password = document.getElementById("loginPassword").value;
-  loginError.textContent = "";
-  try {
-    const userCredential = await signInWithEmailAndPassword(auth, email, password);
-    const user = userCredential.user;
+  // Optional: nav visibility if you use it
+  onAuthStateChanged(auth, (user) => {
+    const isLoggedIn = !!user;
+    const setDisp = (id, on) => { const el = document.getElementById(id); if (el) el.style.display = on ? "" : "none"; };
+    setDisp("signupLink", !isLoggedIn);
+    setDisp("loginLink",  !isLoggedIn);
+    setDisp("signupLinkMobile", !isLoggedIn);
+    setDisp("loginLinkMobile",  !isLoggedIn);
+  });
 
-    // Check if name exists in DB, if not prompt
-    const snapshot = await get(child(ref(db), `users/${user.uid}`));
-    if (!snapshot.exists() || !snapshot.val().name) {
-      const name = prompt("Enter your full name:");
-      await updateProfile(user, { displayName: name });
-      await set(ref(db, 'users/' + user.uid), { name: name, email: email, points: 0 });
+  // -------- Email / Password Login --------
+  loginForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    loginError.textContent = "";
+
+    const email = document.getElementById("loginEmail").value.trim();
+    const password = document.getElementById("loginPassword").value;
+
+    try {
+      const { user } = await signInWithEmailAndPassword(auth, email, password);
+
+      // Ensure /users/<uid> has a name (from Auth profile or prompt once)
+      const usersRoot = ref(db);
+      const snap = await get(child(usersRoot, `users/${user.uid}`));
+
+      let name = user.displayName;
+      if (!snap.exists() || !snap.val()?.name) {
+        if (!name) {
+          name = prompt("Enter your full name:") || (email.split("@")[0]);
+          await updateProfile(user, { displayName: name });
+        }
+        await update(ref(db, `users/${user.uid}`), {
+          name,
+          email: user.email || email
+        });
+      }
+
+      document.cookie = "loggedIn=true; path=/";
+      window.location.href = "dashboard.html";
+    } catch (err) {
+      console.error(err);
+      loginError.textContent = "Incorrect email or password.";
     }
+  });
 
-    document.cookie = "loggedIn=true; path=/";
-    window.location.href = "dashboard.html";
-  } catch (err) {
-    loginError.textContent = "Incorrect email or password.";
-  }
-});
+  // -------- Google Login --------
+  const googleBtn = document.getElementById("googleLoginBtn");
+  googleBtn.addEventListener("click", async () => {
+    loginError.textContent = "";
+    const provider = new GoogleAuthProvider();
+    try {
+      const { user } = await signInWithPopup(auth, provider);
 
-// Google Login
-const googleBtn = document.getElementById("googleLoginBtn");
-googleBtn.addEventListener("click", async () => {
-  const provider = new GoogleAuthProvider();
-  try {
-    const result = await signInWithPopup(auth, provider);
-    const user = result.user;
+      // One-time ensure name present
+      let name = user.displayName;
+      if (!name) {
+        name = prompt("Enter your full name:") || "User";
+        await updateProfile(user, { displayName: name });
+      }
 
-    // Check if name exists, prompt if missing
-    let name = user.displayName;
-    if (!name) {
-      name = prompt("Enter your full name:");
-      await updateProfile(user, { displayName: name });
+      // Upsert user record without wiping other fields (e.g., rfid_uid)
+      await update(ref(db, `users/${user.uid}`), {
+        name,
+        email: user.email || null
+      });
+
+      document.cookie = "loggedIn=true; path=/";
+      window.location.href = "dashboard.html";
+    } catch (err) {
+      console.error(err);
+      loginError.textContent = "Google login failed. Check console for details.";
     }
-
-    const snapshot = await get(child(ref(db), `users/${user.uid}`));
-    if (!snapshot.exists()) {
-      await set(ref(db, 'users/' + user.uid), { name: name, email: user.email, points: 0 });
-    }
-
-    document.cookie = "loggedIn=true; path=/";
-    window.location.href = "dashboard.html";
-
-  } catch (err) {
-    loginError.textContent = "Google login failed.";
-    console.error(err);
-  }
-});
+  });
 </script>
+
 
 <script>
 function toggleSettings() { document.getElementById("settingsPanel").classList.toggle("show"); }
