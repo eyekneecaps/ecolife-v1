@@ -110,25 +110,21 @@
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
-import { 
-  getDatabase, ref, get, set, update, remove, onValue 
-} from "https://www.gstatic.com/firebasejs/11.9.1/firebase-database.js";
-import { 
-  getAuth, onAuthStateChanged, signOut 
-} from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
+import { getDatabase, ref, get, set, update, remove, onValue } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-database.js";
+import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
 
-// --- Firebase ---
 const firebaseConfig = {
   apiKey: "AIzaSyDW5APPZMu-lojVRNg89ZDBEY14YD77xd4",
   authDomain: "ecolife--v1.firebaseapp.com",
   databaseURL: "https://ecolife--v1-default-rtdb.europe-west1.firebasedatabase.app",
   projectId: "ecolife--v1"
 };
+
 const app = initializeApp(firebaseConfig);
 const db  = getDatabase(app);
 const auth = getAuth(app);
 
-// --- DOM refs ---
+// DOM
 const userNameEl = document.getElementById("userName");
 const userIdEl = document.getElementById("userId");
 const linkedRFIDEl = document.getElementById("linkedRFID");
@@ -138,37 +134,25 @@ const rfidInput = document.getElementById("rfidInput");
 const linkButton = document.getElementById("linkButton");
 const rfidMessage = document.getElementById("rfidMessage");
 const dashboardTable = document.getElementById("dashboardTable");
-
 const modal = document.getElementById("rfidModal");
 const modalInput = document.getElementById("modalRfidInput");
 const modalLinkBtn = document.getElementById("modalLinkBtn");
 const modalMessage = document.getElementById("modalRfidMessage");
 
-// --- State ---
 let currentUser = null;
 let currentUserRFID = null;
 let unsubscribePoints = null;
 
-// --- UI helpers ---
-function showMessage(el, text, type="error") {
-  el.textContent = text;
-  el.className = type === "success" ? "success" : "error";
-}
-function clearMessage(el){ el.textContent=""; el.className=""; }
+function showMessage(el, text, type="error"){ el.textContent = text; el.className = type === "success" ? "success" : "error"; }
+function clearMessage(el){ el.textContent = ""; el.className = ""; }
 function updateDashboardTable(rfid, points){
   dashboardTable.innerHTML = `<tr><th>UID</th><th>Points</th></tr>`;
-  if(rfid){
-    const tr = document.createElement("tr");
-    tr.innerHTML = `<td>${rfid}</td><td>${points||0}</td>`;
-    dashboardTable.appendChild(tr);
-  } else {
-    const tr = document.createElement("tr");
-    tr.innerHTML = `<td colspan="2">No RFID linked</td>`;
-    dashboardTable.appendChild(tr);
-  }
+  const tr = document.createElement("tr");
+  tr.innerHTML = rfid ? `<td>${rfid}</td><td>${points||0}</td>` : `<td colspan="2">No RFID linked</td>`;
+  dashboardTable.appendChild(tr);
 }
 
-// --- Auth listener ---
+// Auth
 onAuthStateChanged(auth, (user) => {
   if (!user) { window.location.href = "login.html"; return; }
   currentUser = user;
@@ -178,7 +162,7 @@ onAuthStateChanged(auth, (user) => {
   const userRef = ref(db, `users/${user.uid}`);
   onValue(userRef, (snap) => {
     const data = snap.val() || {};
-    currentUserRFID = data.rfid_uid || null;     // <<< use rfid_uid consistently
+    currentUserRFID = data.rfid_uid || null;     // <<< use rfid_uid
     linkedRFIDEl.textContent = currentUserRFID || "Not linked";
 
     if (unsubscribePoints) { unsubscribePoints(); unsubscribePoints = null; }
@@ -189,8 +173,8 @@ onAuthStateChanged(auth, (user) => {
       updateDashboardTable(null, null);
     } else {
       rfidSection.style.display = "none";
-      const rfidPtsRef = ref(db, `linked_uids/${currentUserRFID}/points`);
-      unsubscribePoints = onValue(rfidPtsRef, (ptsSnap) => {
+      const ptsRef = ref(db, `linked_uids/${currentUserRFID}/points`);
+      unsubscribePoints = onValue(ptsRef, (ptsSnap) => {
         const pts = ptsSnap.exists() ? ptsSnap.val() : 0;
         userPointsEl.textContent = pts;
         updateDashboardTable(currentUserRFID, pts);
@@ -199,69 +183,49 @@ onAuthStateChanged(auth, (user) => {
   });
 });
 
-// --- Link RFID (sequential writes; clear step logs) ---
+// Link RFID (SEQUENTIAL writes; NEVER update at "/")
 async function linkRFID(uidValue, inputEl, messageEl, buttonEl){
   clearMessage(messageEl);
   uidValue = (uidValue||"").trim().toUpperCase();
-  if (!uidValue) { showMessage(messageEl,"Enter a valid UID."); return; }
-  if (currentUserRFID) { showMessage(messageEl,"You already have a linked RFID."); return; }
+  if (!uidValue) { showMessage(messageEl, "Enter a valid UID."); return; }
+  if (currentUserRFID) { showMessage(messageEl, "You already have a linked RFID."); return; }
 
   try {
-    // Detect which unlinked pool exists
+    // Which unlinked branch exists?
     const unlinked1 = ref(db, `_unlinked_uids/${uidValue}`);
     const unlinked2 = ref(db, `unlinked_uids/${uidValue}`);
     let unlinkedRef = unlinked1;
     let snap = await get(unlinked1);
     if (!snap.exists()) {
       const snap2 = await get(unlinked2);
-      if (!snap2.exists()) {
-        showMessage(messageEl, "This RFID is not available in unlinked pool.");
-        return;
-      }
+      if (!snap2.exists()) { showMessage(messageEl, "This UID is not available in the unlinked pool."); return; }
       unlinkedRef = unlinked2; snap = snap2;
     }
     const points = Number(snap.val()?.points || 0);
 
-    // If mapping already exists to someone else, block
+    // If already mapped to someone else, block
     const mapRef = ref(db, `rfid_to_user/${uidValue}`);
     const existing = (await get(mapRef)).val();
     if (existing && existing !== currentUser.uid) {
-      showMessage(messageEl, "This RFID is already linked to another account.");
-      return;
+      showMessage(messageEl, "This UID is already linked to another account."); return;
     }
 
-    // STEP 1: set my user fields (allowed by users/$uid rule)
-    try {
-      await update(ref(db, `users/${currentUser.uid}`), { rfid_uid: uidValue, points });
-    } catch (e) {
-      console.error("STEP 1 users/<uid> update denied:", e);
-      showMessage(messageEl, "Denied writing to users/<uid>. Check rules for users/$uid .write.");
-      return;
-    }
+    // STEP 1: user fields (allowed by users/$uid rule)
+    try { await update(ref(db, `users/${currentUser.uid}`), { rfid_uid: uidValue, points }); }
+    catch(e){ console.error("STEP 1 users/<uid> denied:", e); showMessage(messageEl, "Denied: users/<uid> write."); return; }
 
-    // STEP 2: create/confirm mapping (STRING equal to auth.uid; write-once)
-    try {
-      await set(mapRef, currentUser.uid);
-    } catch (e) {
-      console.error("STEP 2 rfid_to_user set denied:", e);
-      showMessage(messageEl, "Denied creating rfid_to_user/<UID>. Ensure rule allows write-once string equal to your uid.");
-      return;
-    }
+    // STEP 2: create/confirm mapping (STRING == auth.uid; write-once)
+    try { await set(mapRef, currentUser.uid); }
+    catch(e){ console.error("STEP 2 rfid_to_user set denied:", e); showMessage(messageEl, "Denied: rfid_to_user/<UID> write."); return; }
 
     // STEP 3: seed linked_uids/<UID>/points (requires mapping == auth.uid)
-    try {
-      await set(ref(db, `linked_uids/${uidValue}/points`), points);
-    } catch (e) {
-      console.error("STEP 3 linked_uids write denied:", e);
-      showMessage(messageEl, "Denied writing linked_uids/<UID>. Rule must allow write if mapping points to you.");
-      return;
-    }
+    try { await set(ref(db, `linked_uids/${uidValue}/points`), points); }
+    catch(e){ console.error("STEP 3 linked_uids write denied:", e); showMessage(messageEl, "Denied: linked_uids/<UID> write."); return; }
 
-    // STEP 4: remove from unlinked pool (non-fatal if denied)
-    try { await remove(unlinkedRef); } 
-    catch (e) { console.warn("STEP 4 unlinked remove failed (non-fatal):", e); }
+    // STEP 4: remove from unlinked pool (non-fatal)
+    try { await remove(unlinkedRef); } catch(e){ console.warn("STEP 4 unlinked remove failed (non-fatal):", e); }
 
-    // UI success
+    // UI
     currentUserRFID = uidValue;
     linkedRFIDEl.textContent = uidValue;
     userPointsEl.textContent = points;
@@ -281,8 +245,8 @@ async function linkRFID(uidValue, inputEl, messageEl, buttonEl){
 linkButton.addEventListener("click", () => linkRFID(rfidInput.value, rfidInput, rfidMessage, linkButton));
 modalLinkBtn.addEventListener("click", () => linkRFID(modalInput.value, modalInput, modalMessage, modalLinkBtn));
 
-// Modal
-function openRFIDModal(){ modal.style.display = "flex"; modalInput.value = ""; clearMessage(modalMessage); }
+// Modal helpers
+function openRFIDModal(){ modal.style.display = "flex"; modalInput.value=""; clearMessage(modalMessage); }
 function closeRFIDModal(){ modal.style.display = "none"; }
 window.openRFIDModal = openRFIDModal;
 
@@ -295,6 +259,7 @@ document.querySelector(".gear").addEventListener("click", ()=>{
 });
 window.checkLogin = (e)=>{ if (!currentUser) { e.preventDefault(); alert("You must be logged in to access the dashboard."); } };
 </script>
+
 
 <script>
     // <!-- Start of ChatBot (www.chatbot.com) code -->
