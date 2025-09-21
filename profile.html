@@ -14,7 +14,7 @@ html, body { margin:0!important; padding:0!important; background:var(--eco-bg)!i
 /* Topnav — enforced */
 .topnav {
   display:flex!important; justify-content:space-between!important; align-items:center!important;
-  padding:1rem!important; background:#000!important; color:#fff!important; position:relative!important; z-index:1000!important;
+  padding:1rem!important; background:#0a192a!important; color:#fff!important; position:relative!important; z-index:1000!important;
 }
 .topnav .nav-center { font-size:1.2rem!important; font-weight:700!important; }
 .topnav .gear { font-size:1.5rem!important; cursor:pointer!important; color:#fff!important; }
@@ -25,15 +25,27 @@ html, body { margin:0!important; padding:0!important; background:var(--eco-bg)!i
 
 /* Mobile dropdown */
 @media (max-width:600px){
-  .hamburger{ display:block!important; }
-  .topnav .nav-links{ display:none!important; }
-  .nav-dropdown{
-    display:none!important; position:absolute!important; right:1rem!important; top:3.5rem!important;
-    background:var(--eco-blue)!important; padding:1rem!important; border-radius:6px!important; z-index:1001!important;
-  }
-  .nav-dropdown.show{ display:flex!important; flex-direction:column!important; }
-  .nav-dropdown a{ color:#fff!important; margin:.5rem 0!important; text-decoration:none!important; }
+/* Base: always hidden unless mobile + .show */
+.nav-dropdown{
+  display:none;
+  position:absolute;
+  right:1rem;
+  top:3.5rem;
+  background:#073763;
+  flex-direction:column;
+  padding:1rem;
+  border-radius:6px;
+  z-index:999;
 }
+
+/* Mobile behavior */
+@media (max-width:600px){
+  .hamburger{ display:block; }
+  .nav-links{ display:none; }
+  .nav-dropdown.show{ display:flex; }  /* only becomes visible on mobile when .show is added */
+  .nav-dropdown a{ color:#fff; margin:.5rem 0; text-decoration:none; }
+}
+
 
 /* Cards / layout */
 .container{
@@ -74,7 +86,7 @@ html, body { margin:0!important; padding:0!important; background:var(--eco-bg)!i
       <a href="signup.html" id="signupLink">Sign Up</a>
       <a href="login.html" id="loginLink">Login</a>
     </div>
-    <button class="hamburger" onclick="document.getElementById('mobileDropdown').classList.toggle('show')">☰</button>
+<button class="hamburger" onclick="document.getElementById('mobileDropdown').classList.toggle('show')">☰</button>
   </nav>
 
   <div class="nav-dropdown" id="mobileDropdown">
@@ -251,7 +263,19 @@ html, body { margin:0!important; padding:0!important; background:var(--eco-bg)!i
         setStatus("No email for this account.", "error");
       }
     };
+    document.addEventListener('DOMContentLoaded', () => {
+  const dd = document.getElementById('mobileDropdown');
+  // force hidden on load
+  dd?.classList.remove('show');
+
+  // auto-close if user widens screen
+  const closeIfDesktop = () => {
+    if (window.innerWidth > 600) dd?.classList.remove('show');
+  };
+  window.addEventListener('resize', closeIfDesktop, { passive: true });
+});
   </script>
 </body>
 </html>
+
 
