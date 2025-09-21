@@ -174,29 +174,34 @@
   });
 
   // Unlink keeps points with the tag (moves to unlinked_uids), clears user’s rfid/points
-  window.unlinkRFID = async () => {
-    if (!currentUserId) { alert("You must be logged in to unlink RFID."); return; }
+export async function cleanupUnlinkForUser(userId) {
+  // 1) read current RFID from user node
+  const rfidSnap = await get(ref(db, `users/${userId}/rfid`));
+  if (!rfidSnap.exists()) throw new Error("No RFID linked to this account.");
 
-    const rfidRef = ref(db, `users/${currentUserId}/rfid`);
-    const rfidSnap = await get(rfidRef);
-    if (!rfidSnap.exists()) { alert("No RFID linked to this account."); return; }
+  const rfid = rfidSnap.val();
 
-    const rfid = rfidSnap.val();
+  // 2) move points from linked -> unlinked if present
+  const linkedRef = ref(db, `linked_uids/${rfid}`);
+  const linkedSnap = await get(linkedRef);
+  if (linkedSnap.exists()) {
+    await set(ref(db, `unlinked_uids/${rfid}`), linkedSnap.val());
+    await remove(linkedRef);
+  }
 
-    try {
-      // 1) Move linked -> unlinked (retain points)
-      const linkedRef = ref(db, `linked_uids/${rfid}`);
-      const linkedSnap = await get(linkedRef);
-      if (linkedSnap.exists()) {
-        await set(ref(db, `unlinked_uids/${rfid}`), linkedSnap.val());
-        await remove(linkedRef);
-      }
+  // 3) remove mapping
+  await remove(ref(db, `rfid_to_user/${rfid}`));
 
-      // 2) Remove mapping rfid_to_user/<rfid>
-      await remove(ref(db, `rfid_to_user/${rfid}`));
+  // 4) delete events subtree under the user (if you store events)
+  await remove(ref(db, `users/${userId}/events`)).catch(()=>{});
 
-      // 3) Clear user's rfid & points
-      await update(ref(db, `users/${currentUserId}`), { rfid: null, points: 0 });
+  // 5) clear user fields (rfid, rfid_uid, points)
+  await update(ref(db, `users/${userId}`), {
+    rfid: null,
+    rfid_uid: null,
+    points: 0
+  });
+}
 
       detachPoints();
       currentRFID = null;
@@ -229,4 +234,5 @@
 
 </body>
 </html>
+
 
