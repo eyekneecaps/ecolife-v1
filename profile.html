@@ -85,9 +85,8 @@
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
   import { getAuth, onAuthStateChanged, signOut, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
-  import { getDatabase, ref, onValue, get, set, update, remove } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-database.js";
+  import { getDatabase, ref, onValue, get, set, update, remove, child } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-database.js";
 
-  // ---- Firebase config ----
   const firebaseConfig = {
     apiKey: "AIzaSyDW5APPZMu-lojVRNg89ZDBEY14YD77xd4",
     authDomain: "ecolife--v1.firebaseapp.com",
@@ -99,23 +98,21 @@
   const auth = getAuth(app);
   const db = getDatabase(app);
 
-  // ---- UI elements ----
   const nameEl  = document.getElementById("name");
   const emailEl = document.getElementById("email");
   const uidEl   = document.getElementById("uid");
   const rfidEl  = document.getElementById("rfid");
   const unlinkBtn = document.getElementById("unlinkBtn");
 
-  // ---- state ----
   let currentUserId = null;
   let currentRFID = null;
-  let unsubscribePoints = null; // to detach previous listener
+  let unsubscribePoints = null;
 
-  // Helper: attach live points listener for a given RFID
+  function detachPoints() { if (unsubscribePoints) { unsubscribePoints(); unsubscribePoints = null; } }
+
   function listenRFIDPoints(rfid) {
-    if (unsubscribePoints) { unsubscribePoints(); unsubscribePoints = null; }
+    detachPoints();
     if (!rfid) return;
-
     const pointsRef = ref(db, `linked_uids/${rfid}/points`);
     unsubscribePoints = onValue(pointsRef, (snap) => {
       const pts = snap.exists() ? snap.val() : 0;
@@ -123,7 +120,24 @@
     });
   }
 
-  // Auth / profile load
+  // Fallback: if users/<uid>/rfid is missing, scan rfid_to_user for this user
+  async function findRFIDForUser(userId) {
+    const mapSnap = await get(ref(db, "rfid_to_user"));
+    if (!mapSnap.exists()) return null;
+    const map = mapSnap.val() || {};
+    // Two formats supported:
+    //  1) rfid_to_user/<rfid> = "<userId>"
+    //  2) rfid_to_user/<rfid> = { uid: "<userId>", points: ... }
+    for (const rfid of Object.keys(map)) {
+      const v = map[rfid];
+      if ((typeof v === "string" && v === userId) ||
+          (v && typeof v === "object" && v.uid === userId)) {
+        return rfid;
+      }
+    }
+    return null;
+  }
+
   onAuthStateChanged(auth, async (user) => {
     if (!user) { window.location.href = "login.html"; return; }
 
@@ -133,23 +147,33 @@
     uidEl.textContent   = user.uid;
 
     const userRef = ref(db, `users/${user.uid}`);
-    onValue(userRef, (snap) => {
+    onValue(userRef, async (snap) => {
       const data = snap.val() || {};
       currentRFID = data.rfid || null;
 
       if (!currentRFID) {
+        // Try to recover from rfid_to_user mapping
+        const recovered = await findRFIDForUser(currentUserId);
+        if (recovered) {
+          currentRFID = recovered;
+          // Auto-heal: write it back under users/<uid>/rfid (allowed by your rules)
+          try { await update(userRef, { rfid: currentRFID }); } catch (e) {}
+          unlinkBtn.style.display = "block";
+          listenRFIDPoints(currentRFID);
+          return;
+        }
+        // Still nothing
         rfidEl.textContent = "Not linked";
         unlinkBtn.style.display = "none";
-        if (unsubscribePoints) { unsubscribePoints(); unsubscribePoints = null; }
+        detachPoints();
       } else {
         unlinkBtn.style.display = "block";
-        // Show points live from linked_uids/<rfid>/points
         listenRFIDPoints(currentRFID);
       }
     });
   });
 
-  // Unlink RFID: keep points with the tag (move to unlinked_uids), clear user’s rfid + points
+  // Unlink keeps points with the tag (moves to unlinked_uids), clears user’s rfid/points
   window.unlinkRFID = async () => {
     if (!currentUserId) { alert("You must be logged in to unlink RFID."); return; }
 
@@ -160,7 +184,7 @@
     const rfid = rfidSnap.val();
 
     try {
-      // 1) Move points from linked_uids -> unlinked_uids (if linked exists)
+      // 1) Move linked -> unlinked (retain points)
       const linkedRef = ref(db, `linked_uids/${rfid}`);
       const linkedSnap = await get(linkedRef);
       if (linkedSnap.exists()) {
@@ -171,11 +195,10 @@
       // 2) Remove mapping rfid_to_user/<rfid>
       await remove(ref(db, `rfid_to_user/${rfid}`));
 
-      // 3) Clear user’s rfid and points (only under their own node)
+      // 3) Clear user's rfid & points
       await update(ref(db, `users/${currentUserId}`), { rfid: null, points: 0 });
 
-      // UI tidy
-      if (unsubscribePoints) { unsubscribePoints(); unsubscribePoints = null; }
+      detachPoints();
       currentRFID = null;
       rfidEl.textContent = "Not linked";
       unlinkBtn.style.display = "none";
@@ -187,26 +210,23 @@
     }
   };
 
-  // Logout
   window.logout = () => signOut(auth).then(() => window.location.href = "login.html");
 
-  // Password reset
   window.resetPassword = () => {
-    const user = auth.currentUser;
-    if (user?.email) {
-      sendPasswordResetEmail(auth, user.email)
-        .then(() => alert("Password reset email sent to " + user.email))
+    const u = auth.currentUser;
+    if (u?.email) {
+      sendPasswordResetEmail(auth, u.email)
+        .then(() => alert("Password reset email sent to " + u.email))
         .catch(err => alert("Error: " + (err?.message || err)));
     } else {
-      alert("No email found for this account.");
+      alert("No email for this account.");
     }
   };
 
-  // Mobile nav
   window.toggleMobileNav = () => document.getElementById("mobileDropdown").classList.toggle("show");
-
-  // Gear icon (just send them back to dashboard)
-  window.toggleSettings = () => window.location.href = "dashboard.html";
+  window.toggleSettings  = () => window.location.href = "dashboard.html";
 </script>
+
 </body>
 </html>
+
