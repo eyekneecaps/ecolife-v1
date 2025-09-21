@@ -7,15 +7,19 @@
   <link rel="icon" href="favicon.png" type="image/png">
   <style>
     body { font-family: system-ui, sans-serif; margin:0; background:#0a192a; color:#fff; }
-    .topnav { display:flex; justify-content:space-between; align-items:center; padding:1rem; background:#000; }
+    .topnav { display:flex; justify-content:space-between; align-items:center; padding:1rem; background:#000; color:#fff; }
+    .nav-center { font-size:1.2rem; font-weight:700; }
+    .nav-links a { color:#fff; text-decoration:none; margin-left:1rem; }
+    .nav-links a:hover { text-decoration:underline; }
     .hamburger { display:none; font-size:1.5rem; background:none; border:none; color:white; }
     @media (max-width:600px) {
       .hamburger { display:block; }
+      .nav-links { display:none; }
       .nav-dropdown { display:none; position:absolute; right:1rem; top:3.5rem; background:#073763; flex-direction:column; padding:1rem; border-radius:6px; z-index:999; }
       .nav-dropdown.show { display:flex; }
       .nav-dropdown a { color:white; margin:.5rem 0; text-decoration:none; }
     }
-    .nav-right a { color:#fff; margin-left:1rem; text-decoration:none; }
+
     .container { max-width:640px; margin:3rem auto; padding:2rem; background:#07121f; border-radius:12px; box-shadow:0 4px 12px rgba(0,0,0,.5); }
     .info-row { margin-bottom:1rem; }
     .info-label { font-weight:700; margin-right:6px; }
@@ -25,18 +29,23 @@
     .btn-back { background:#444; color:white; }
     .btn-logout { background:#e74c3c; color:white; }
     .btn-reset { background:#3498db; color:white; }
-    .btn-unlink { background:#f39c12; color:white; display:none; }
+    .btn-unlink { background:#f39c12; color:white; display:none; } /* JS will flip to inline-block */
     .hint { opacity:.8; font-size:.9rem; }
   </style>
 </head>
 <body>
   <nav class="topnav">
-    <div class="nav-left"><strong>EcoLife</strong></div>
-    <div class="nav-right">
+    <div class="nav-left">
+      <span class="gear" onclick="location.href='dashboard.html'">⚙️</span>
+    </div>
+    <div class="nav-center">EcoLife</div>
+    <div class="nav-right nav-links">
       <a href="index.html">About</a>
       <a href="products.html">Services</a>
       <a href="dashboard.html">Dashboard</a>
       <a href="leaderboard.html">Leaderboard</a>
+      <a href="signup.html" id="signupLink">Sign Up</a>
+      <a href="login.html"  id="loginLink">Login</a>
     </div>
     <button class="hamburger" onclick="toggleMobileNav()">☰</button>
   </nav>
@@ -46,6 +55,8 @@
     <a href="products.html">Services</a>
     <a href="dashboard.html">Dashboard</a>
     <a href="leaderboard.html">Leaderboard</a>
+    <a href="signup.html" id="signupLinkMobile">Sign Up</a>
+    <a href="login.html"  id="loginLinkMobile">Login</a>
   </div>
 
   <div class="container">
@@ -101,34 +112,38 @@
     const emailEl  = document.getElementById("email");
     const uidEl    = document.getElementById("uid");
     const rfidEl   = document.getElementById("rfid");
-    const unlinkBt = document.getElementById("unlinkBtn");
+    const unlinkBtn= document.getElementById("unlinkBtn");
 
-    let currentUserId = null;
-    let currentRFID   = null;
-    let pointsUnsub   = null;
-
+    // ------ nav helpers (same behavior as leaderboard) ------
     function toggleMobileNav(){ document.getElementById("mobileDropdown").classList.toggle("show"); }
     window.toggleMobileNav = toggleMobileNav;
 
-    function detachPoints(){
-      if (pointsUnsub) { try { pointsUnsub(); } catch(_){} pointsUnsub = null; }
+    function updateAuthNav(isLoggedIn){
+      const show = (id, on)=>{ const el=document.getElementById(id); if(el) el.style.display = on? "": "none"; };
+      show("signupLink", !isLoggedIn);
+      show("loginLink",  !isLoggedIn);
+      show("signupLinkMobile", !isLoggedIn);
+      show("loginLinkMobile",  !isLoggedIn);
     }
+
+    // ------ points listener ------
+    let pointsUnsub = null;
+    function detachPoints(){ if(pointsUnsub){ try{ pointsUnsub(); }catch{} pointsUnsub=null; } }
 
     function watchPoints(rfid){
       detachPoints();
-      if (!rfid) return;
+      if(!rfid) return;
       const pRef = ref(db, `linked_uids/${rfid}/points`);
       pointsUnsub = onValue(pRef, (snap)=>{
-        const pts = snap.exists() ? snap.val() : 0;
+        const pts = snap.exists()? snap.val(): 0;
         rfidEl.textContent = `${rfid} (Points: ${pts})`;
       }, (err)=>{
-        // Permission issues surface here if rules aren't set
-        rfidEl.textContent = `${rfid} (Points: —)`;
         console.warn("points listener error:", err?.message);
+        rfidEl.textContent = `${rfid} (Points: —)`;
       });
     }
 
-    // Efficient RFID lookup via indexed query (requires .indexOn:["uid"])
+    // Efficient RFID lookup via indexed query (requires rfid_to_user .indexOn:["uid"])
     async function getRFIDForUser(userId){
       const q = query(ref(db, "rfid_to_user"), orderByChild("uid"), equalTo(userId));
       const snap = await get(q);
@@ -137,46 +152,7 @@
       return Object.keys(obj)[0] || null;
     }
 
-    // --- Auth + profile load ---
-    onAuthStateChanged(auth, async (user)=>{
-      if (!user) { location.href = "login.html"; return; }
-
-      currentUserId = user.uid;
-      nameEl.textContent  = user.displayName || user.email || "User";
-      emailEl.textContent = user.email || "—";
-      uidEl.textContent   = user.uid;
-
-      const userRef = ref(db, `users/${user.uid}`);
-      onValue(userRef, async (snap)=>{
-        const data = snap.val() || {};
-        currentRFID = data.rfid || null;
-
-        if (!currentRFID) {
-          // Auto-recover from mapping if present
-          try {
-            const recovered = await getRFIDForUser(currentUserId);
-            if (recovered) {
-              currentRFID = recovered;
-              try { await update(userRef, { rfid: recovered }); } catch(_) {}
-              unlinkBt.style.display = "";
-              watchPoints(currentRFID);
-              return;
-            }
-          } catch(e){ console.warn(e); }
-          rfidEl.textContent = "Not linked";
-          unlinkBt.style.display = "none";
-          detachPoints();
-        } else {
-          unlinkBt.style.display = "";
-          watchPoints(currentRFID);
-        }
-      }, (err)=>{
-        // If users node is locked down, show minimal info
-        console.warn("users listener error:", err?.message);
-      });
-    });
-
-    // --- Full unlink cleanup helper ---
+    // ------ unlink routine ------
     async function cleanupUnlinkForUser(userId){
       // 1) read RFID
       const rfidSnap = await get(ref(db, `users/${userId}/rfid`));
@@ -186,7 +162,7 @@
       // 2) move linked_uids/<rfid> -> unlinked_uids/<rfid>
       const linkedRef = ref(db, `linked_uids/${rfid}`);
       const linkedSnap = await get(linkedRef);
-      if (linkedSnap.exists()) {
+      if (linkedSnap.exists()){
         await set(ref(db, `unlinked_uids/${rfid}`), linkedSnap.val());
         await remove(linkedRef);
       }
@@ -207,22 +183,61 @@
       return rfid;
     }
 
-    // Button wrapper
     async function unlinkRFID(){
-      try {
-        const rfid = await cleanupUnlinkForUser(currentUserId);
+      try{
+        const user = auth.currentUser;
+        if(!user) { alert("Not logged in."); return; }
+        const rfid = await cleanupUnlinkForUser(user.uid);
         detachPoints();
-        currentRFID = null;
         rfidEl.textContent = "Not linked";
-        unlinkBt.style.display = "none";
+        unlinkBtn.style.display = "none";
         alert(`RFID ${rfid} unlinked and cleaned.`);
-      } catch(e){
+      }catch(e){
         alert("Unlink failed: " + (e?.message || e));
       }
     }
     window.unlinkRFID = unlinkRFID;
 
-    // Small helpers
+    // ------ auth + profile load ------
+    onAuthStateChanged(auth, async (user)=>{
+      const loggedIn = !!user;
+      document.cookie = `loggedIn=${loggedIn}; path=/`;
+      updateAuthNav(loggedIn);
+
+      if (!user){ location.href = "login.html"; return; }
+
+      nameEl.textContent  = user.displayName || user.email || "User";
+      emailEl.textContent = user.email || "—";
+      uidEl.textContent   = user.uid;
+
+      const userRef = ref(db, `users/${user.uid}`);
+      onValue(userRef, async (snap)=>{
+        const data = snap.val() || {};
+        let rfid = data.rfid || null;
+
+        if (!rfid){
+          // Try recover via mapping
+          try {
+            const recovered = await getRFIDForUser(user.uid);
+            if (recovered){
+              rfid = recovered;
+              try { await update(userRef, { rfid: recovered }); } catch(_) {}
+            }
+          } catch(e){ console.warn(e); }
+        }
+
+        if (rfid){
+          unlinkBtn.style.display = "inline-block";   // <— force visible
+          watchPoints(rfid);
+        } else {
+          unlinkBtn.style.display = "none";
+          detachPoints();
+          rfidEl.textContent = "Not linked";
+        }
+      }, (err)=> console.warn("users listener error:", err?.message));
+    });
+
+    // small helpers
     window.logout = () => signOut(auth).then(()=> location.href="login.html");
     window.resetPassword = () => {
       const u = auth.currentUser;
