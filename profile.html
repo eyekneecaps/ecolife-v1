@@ -6,65 +6,66 @@
   <title>Your Profile – EcoLife</title>
   <link rel="icon" href="favicon.png" type="image/png">
   <style>
-    body { font-family: system-ui, sans-serif; margin:0; background:#0a192a; color:#fff; }
+    body { background:#0a192a; color:white; font-family: system-ui, sans-serif; margin:0; padding:0; }
 
-    /* === NAV (pixel-match to leaderboard) === */
- .topnav { display:flex; justify-content:space-between; align-items:center; padding:1rem; background-color:#000; }
-    .nav-center { font-size:1.2rem; font-weight:700; }
-    .gear { font-size:1.5rem; cursor:pointer; }
-    .nav-links { display:flex; gap:1rem; align-items:center; }
-    .topnav a,
-    .topnav a:visited { color:#fff !important; text-decoration:none; }
-    .topnav a:hover { text-decoration:underline; }
-    .hamburger { display:none; font-size:1.5rem; background:none; border:none; color:white; }
-    @media (max-width:600px){
-      .hamburger { display:block; }
-      .nav-links { display:none; }
-      .nav-dropdown {
-        display:none; position:absolute; right:1rem; top:3.5rem;
-        background:#073763; flex-direction:column; padding:1rem; border-radius:6px; z-index:999;
-      }
-      .nav-dropdown.show { display:flex; }
-      .nav-dropdown a { color:white; margin:.5rem 0; text-decoration:none; }
+    /* === Shared header (copied from dashboard) === */
+    .topnav{display:flex;justify-content:space-between;align-items:center;padding:1rem;background:#000;color:#fff}
+    .nav-center{font-size:1.2rem;font-weight:700}
+    .gear{font-size:1.5rem;cursor:pointer;color:#fff}
+    .nav-links{display:flex;gap:1rem;align-items:center}
+    .topnav a,.topnav a:visited{color:#fff!important;text-decoration:none}
+    .topnav a:hover{text-decoration:underline}
+    .hamburger{display:none;font-size:1.5rem;background:none;border:none;color:#fff}
+    @media(max-width:600px){
+      .hamburger{display:block}
+      .nav-links{display:none}
+      .nav-dropdown{display:none;position:absolute;right:1rem;top:3.5rem;background:#073763;flex-direction:column;padding:1rem;border-radius:6px;z-index:999}
+      .nav-dropdown.show{display:flex}
+      .nav-dropdown a{color:white;margin:.5rem 0;text-decoration:none}
     }
 
     /* === Card === */
-    .container { max-width:640px; margin:3rem auto; padding:2rem; background:#07121f; border-radius:12px; box-shadow:0 4px 12px rgba(0,0,0,.5); }
+    .container { max-width:640px; margin:3rem auto; padding:1.5rem; background:#07121f; border-radius:12px; box-shadow:0 4px 12px rgba(0,0,0,.45); }
     .info-row { margin-bottom:1rem; }
     .info-label { font-weight:700; margin-right:6px; }
     .uid { font-family:ui-monospace, Menlo, Consolas, monospace; color:#00ff99; }
     .btn { display:inline-block; margin:.35rem .25rem; padding:10px 14px; border:none; border-radius:8px; cursor:pointer; font-size:15px; transition:.2s; }
-    .btn:hover { opacity:.85; }
+    .btn:hover { opacity:.92; }
     .btn-back { background:#444; color:white; }
     .btn-logout { background:#e74c3c; color:white; }
     .btn-reset { background:#3498db; color:white; }
     .btn-unlink { background:#f39c12; color:white; display:none; } /* JS flips to inline-block */
     .hint { opacity:.8; font-size:.9rem; }
+    .status { margin-top:.75rem; font-size:.95rem; }
+    .status.error { color:#ff6b6b; }
+    .status.success { color:#84cc16; } /* not used for unlink success to avoid 'popup' feel */
   </style>
 </head>
 <body>
   <!-- Header -->
   <nav class="topnav">
-  <div class="nav-left">
-    <span class="gear" onclick="window.location.href='profile.html'">⚙️</span>
-  </div>
-  <div class="nav-center"><strong>EcoLife</strong></div>
-  <div class="nav-right desktop-links">
-    <a href="index.html">About Us</a>
-    <a href="products.html">Services</a>
-    <a href="dashboard.html" onclick="checkLogin(event)">Dashboard</a>
-    <a href="leaderboard.html">Leaderboard</a>
-  </div>
-  <button class="hamburger" onclick="toggleMobileNav()">☰</button>
-</nav>
+    <div class="nav-left"><span class="gear" onclick="location.href='profile.html'">⚙️</span></div>
+    <div class="nav-center"><strong>EcoLife</strong></div>
+    <div class="nav-right nav-links">
+      <a href="index.html">About</a>
+      <a href="products.html">Services</a>
+      <a href="dashboard.html">Dashboard</a>
+      <a href="leaderboard.html">Leaderboard</a>
+      <a href="signup.html" id="signupLink">Sign Up</a>
+      <a href="login.html"  id="loginLink">Login</a>
+    </div>
+    <button class="hamburger" onclick="document.getElementById('mobileDropdown').classList.toggle('show')">☰</button>
+  </nav>
 
-<!-- MOBILE DROPDOWN -->
-<div class="nav-dropdown" id="mobileDropdown">
-  <a href="index.html">About Us</a>
-  <a href="products.html">Services</a>
-  <a href="dashboard.html" onclick="checkLogin(event)">Dashboard</a>
-  <a href="leaderboard.html">Leaderboard</a>
-</div>
+  <!-- Mobile dropdown -->
+  <div class="nav-dropdown" id="mobileDropdown">
+    <a href="index.html">About</a>
+    <a href="products.html">Services</a>
+    <a href="dashboard.html">Dashboard</a>
+    <a href="leaderboard.html">Leaderboard</a>
+    <a href="signup.html" id="signupLinkMobile">Sign Up</a>
+    <a href="login.html"  id="loginLinkMobile">Login</a>
+  </div>
 
   <!-- Profile card -->
   <div class="container">
@@ -76,6 +77,7 @@
     <div class="info-row"><span class="info-label">User ID:</span> <span id="uid" class="uid">—</span></div>
 
     <div class="hint">Points shown live from <code>linked_uids/&lt;rfid&gt;/points</code>.</div>
+    <div id="statusLine" class="status"></div>
 
     <div style="margin-top:1rem">
       <button class="btn btn-back" onclick="location.href='dashboard.html'">← Back to Dashboard</button>
@@ -85,11 +87,10 @@
     </div>
   </div>
 
-  <!-- App -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
     import { getAuth, onAuthStateChanged, signOut, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
-    import { getDatabase, ref, onValue, get, set, update, remove, query, orderByChild, equalTo, runTransaction } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-database.js";
+    import { getDatabase, ref, onValue, get, set, update, remove, query, orderByChild, equalTo } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-database.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyDW5APPZMu-lojVRNg89ZDBEY14YD77xd4",
@@ -107,20 +108,11 @@
     const uidEl     = document.getElementById("uid");
     const rfidEl    = document.getElementById("rfid");
     const unlinkBtn = document.getElementById("unlinkBtn");
+    const statusEl  = document.getElementById("statusLine");
 
-    // --- Nav helpers ---
-    window.toggleMobileNav = () =>
-      document.getElementById("mobileDropdown").classList.toggle("show");
+    const setStatus = (msg, type=""){ statusEl.textContent = msg||""; statusEl.className = type ? `status ${type}` : "status"; }
 
-    function updateAuthNav(isLoggedIn){
-      const show = (id, on)=>{ const el=document.getElementById(id); if(el) el.style.display = on? "": "none"; };
-      show("signupLink", !isLoggedIn);
-      show("loginLink",  !isLoggedIn);
-      show("signupLinkMobile", !isLoggedIn);
-      show("loginLinkMobile",  !isLoggedIn);
-    }
-
-    // --- Points watcher ---
+    // --- Points listener ---
     let pointsUnsub = null;
     function detachPoints(){ if(pointsUnsub){ try{ pointsUnsub(); }catch{} pointsUnsub=null; } }
     function watchPoints(rfid){
@@ -130,39 +122,10 @@
       pointsUnsub = onValue(pRef, (snap)=>{
         const pts = snap.exists()? snap.val(): 0;
         rfidEl.textContent = `${rfid} (Points: ${pts})`;
-      }, (err)=>{
-        console.warn("points listener error:", err?.message);
+      }, ()=>{
         rfidEl.textContent = `${rfid} (Points: —)`;
       });
     }
-
-    // --- Robust link function (transaction; handles legacy strings) ---
-    async function linkRFIDTransaction(rfid){
-      const user = auth.currentUser;
-      if (!user) throw new Error("Not logged in");
-      const mapRef = ref(db, `rfid_to_user/${rfid}`);
-
-      const res = await runTransaction(mapRef, (current) => {
-        if (current === null) return { uid: user.uid };           // claim
-        if (typeof current === "string") {
-          if (current === user.uid) return { uid: user.uid };      // convert legacy self
-          return;                                                  // someone else → abort
-        }
-        if (current && typeof current === "object" && current.uid === user.uid) {
-          return current;                                          // idempotent
-        }
-        return;                                                    // someone else → abort
-      }, { applyLocally:false });
-
-      if (!res.committed) throw new Error("This RFID is already linked to another account.");
-
-      await Promise.all([
-        update(ref(db, `users/${user.uid}`), { rfid }),
-        update(ref(db, `linked_uids/${rfid}`), { points: 0 })
-      ]);
-      return rfid;
-    }
-    // Usage example (call when you actually link): await linkRFIDTransaction('46AA4680');
 
     // --- RFID lookup (indexed query) ---
     async function getRFIDForUser(userId){
@@ -186,23 +149,28 @@
         await remove(linkedRef);
       }
 
-      await remove(ref(db, `rfid_to_user/${rfid}`));     // owner-only delete (rules allow)
+      await remove(ref(db, `rfid_to_user/${rfid}`));
       await remove(ref(db, `users/${userId}/events`)).catch(()=>{});
       await update(ref(db, `users/${userId}`), { rfid:null, rfid_uid:null, points:0 });
+
       return rfid;
     }
 
     async function unlinkRFID(){
+      setStatus("");
       try{
         const user = auth.currentUser;
-        if(!user) { alert("Not logged in."); return; }
+        if(!user) { setStatus("Not logged in.", "error"); return; }
         const rfid = await cleanupUnlinkForUser(user.uid);
+
+        // Quiet UI updates (no popup)
         detachPoints();
         rfidEl.textContent = "Not linked";
         unlinkBtn.style.display = "none";
-        alert(`RFID ${rfid} unlinked and cleaned.`);
+        // no alert, as requested
+
       }catch(e){
-        alert("Unlink failed: " + (e?.message || e));
+        setStatus("Unlink failed: " + (e?.message || e), "error");
       }
     }
     window.unlinkRFID = unlinkRFID;
@@ -210,8 +178,13 @@
     // --- Auth + profile load ---
     onAuthStateChanged(auth, async (user)=>{
       const loggedIn = !!user;
-      document.cookie = `loggedIn=${loggedIn}; path=/`;
-      updateAuthNav(loggedIn);
+
+      // header auth links (match dashboard)
+      const show = (id, on)=>{ const el=document.getElementById(id); if(el) el.style.display = on? "": "none"; };
+      show("signupLink", !loggedIn);
+      show("loginLink",  !loggedIn);
+      show("signupLinkMobile", !loggedIn);
+      show("loginLinkMobile",  !loggedIn);
 
       if (!user){ location.href = "login.html"; return; }
 
@@ -231,18 +204,19 @@
               rfid = recovered;
               try { await update(userRef, { rfid: recovered }); } catch(_) {}
             }
-          } catch(e){ console.warn(e); }
+          } catch {}
         }
 
         if (rfid){
           unlinkBtn.style.display = "inline-block";
           watchPoints(rfid);
+          setStatus("");
         } else {
           unlinkBtn.style.display = "none";
           detachPoints();
           rfidEl.textContent = "Not linked";
         }
-      }, (err)=> console.warn("users listener error:", err?.message));
+      });
     });
 
     // --- Account helpers ---
@@ -251,13 +225,12 @@
       const u = auth.currentUser;
       if (u?.email) {
         sendPasswordResetEmail(auth, u.email)
-          .then(()=>alert("Password reset email sent to " + u.email))
-          .catch(err=>alert("Error: " + (err?.message||err)));
+          .then(()=>{/* quiet */})
+          .catch(err=>setStatus("Reset error: " + (err?.message||err), "error"));
       } else {
-        alert("No email for this account.");
+        setStatus("No email for this account.", "error");
       }
     };
   </script>
 </body>
 </html>
-
