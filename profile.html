@@ -7,18 +7,26 @@
   <link rel="icon" href="favicon.png" type="image/png">
   <style>
     body { font-family: system-ui, sans-serif; margin:0; background:#0a192a; color:#fff; }
-    .topnav { display:flex; justify-content:space-between; align-items:center; padding:1rem; background:#000; color:#fff; }
-    .nav-center { font-size:1.2rem; font-weight:700; }
-    .nav-links a { color:#fff; text-decoration:none; margin-left:1rem; }
-    .nav-links a:hover { text-decoration:underline; }
-    .hamburger { display:none; font-size:1.5rem; background:none; border:none; color:white; }
-    @media (max-width:600px) {
-      .hamburger { display:block; }
-      .nav-links { display:none; }
-      .nav-dropdown { display:none; position:absolute; right:1rem; top:3.5rem; background:#073763; flex-direction:column; padding:1rem; border-radius:6px; z-index:999; }
-      .nav-dropdown.show { display:flex; }
-      .nav-dropdown a { color:white; margin:.5rem 0; text-decoration:none; }
-    }
+/* === NAV identical to leaderboard === */
+.topnav {
+  display:flex; justify-content:space-between; align-items:center;
+  padding:1rem; background:#000; color:#fff;
+}
+.nav-center { font-size:1.2rem; font-weight:700; }
+.nav-links a { color:#fff; text-decoration:none; margin-left:1rem; }
+.nav-links a:hover { text-decoration:underline; }
+.hamburger { display:none; font-size:1.5rem; background:none; border:none; color:white; }
+@media (max-width:600px){
+  .hamburger { display:block; }
+  .nav-links { display:none; }
+  .nav-dropdown {
+    display:none; position:absolute; right:1rem; top:3.5rem;
+    background:#073763; flex-direction:column; padding:1rem; border-radius:6px; z-index:999;
+  }
+  .nav-dropdown.show { display:flex; }
+  .nav-dropdown a { color:white; margin:.5rem 0; text-decoration:none; }
+}
+
 
     .container { max-width:640px; margin:3rem auto; padding:2rem; background:#07121f; border-radius:12px; box-shadow:0 4px 12px rgba(0,0,0,.5); }
     .info-row { margin-bottom:1rem; }
@@ -34,30 +42,31 @@
   </style>
 </head>
 <body>
-  <nav class="topnav">
-    <div class="nav-left">
-      <span class="gear" onclick="location.href='dashboard.html'">⚙️</span>
-    </div>
-    <div class="nav-center">EcoLife</div>
-    <div class="nav-right nav-links">
-      <a href="index.html">About</a>
-      <a href="products.html">Services</a>
-      <a href="dashboard.html">Dashboard</a>
-      <a href="leaderboard.html">Leaderboard</a>
-      <a href="signup.html" id="signupLink">Sign Up</a>
-      <a href="login.html"  id="loginLink">Login</a>
-    </div>
-    <button class="hamburger" onclick="toggleMobileNav()">☰</button>
-  </nav>
-
-  <div class="nav-dropdown" id="mobileDropdown">
+<nav class="topnav">
+  <div class="nav-left">
+    <span class="gear" onclick="location.href='profile.html'">⚙️</span>
+  </div>
+  <div class="nav-center"><strong>EcoLife</strong></div>
+  <div class="nav-right nav-links">
     <a href="index.html">About</a>
     <a href="products.html">Services</a>
     <a href="dashboard.html">Dashboard</a>
     <a href="leaderboard.html">Leaderboard</a>
-    <a href="signup.html" id="signupLinkMobile">Sign Up</a>
-    <a href="login.html"  id="loginLinkMobile">Login</a>
+    <a href="signup.html" id="signupLink">Sign Up</a>
+    <a href="login.html"  id="loginLink">Login</a>
   </div>
+  <button class="hamburger" onclick="toggleMobileNav()">☰</button>
+</nav>
+
+<div class="nav-dropdown" id="mobileDropdown">
+  <a href="index.html">About</a>
+  <a href="products.html">Services</a>
+  <a href="dashboard.html">Dashboard</a>
+  <a href="leaderboard.html">Leaderboard</a>
+  <a href="signup.html" id="signupLinkMobile">Sign Up</a>
+  <a href="login.html"  id="loginLinkMobile">Login</a>
+</div>
+
 
   <div class="container">
     <h2>Your Profile</h2>
@@ -238,6 +247,8 @@
     });
 
     // small helpers
+     window.toggleMobileNav = () =>
+    document.getElementById("mobileDropdown").classList.toggle("show");
     window.logout = () => signOut(auth).then(()=> location.href="login.html");
     window.resetPassword = () => {
       const u = auth.currentUser;
@@ -252,3 +263,4 @@
   </script>
 </body>
 </html>
+
