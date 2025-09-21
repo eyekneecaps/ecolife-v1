@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en" data-theme="dark">
 <head>
-    <link rel="icon" href="favicon.png" type="image/png">
-  <meta charset="UTF-8">
+  <link rel="icon" href="favicon.png" type="image/png">
+  <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Your Profile – EcoLife</title>
   <link rel="stylesheet" href="style.css">
@@ -17,34 +17,19 @@
       .nav-dropdown.show { display:flex; }
       .nav-dropdown a { color:white; margin:0.5rem 0; text-decoration:none; }
     }
-
     .container {
-      max-width: 600px;
-      margin: 4rem auto;
-      padding: 2rem;
-      border-radius: 12px;
-      background: #07121f;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+      max-width: 600px; margin: 4rem auto; padding: 2rem;
+      border-radius: 12px; background: #07121f; box-shadow: 0 4px 12px rgba(0,0,0,0.5);
     }
     .info-row { margin-bottom: 1rem; }
     .info-label { font-weight: bold; margin-right: 6px; }
     .uid { font-family: monospace; color: #00ff99; }
-
-    .btn {
-      display: block;
-      margin: 10px 0;
-      padding: 10px 14px;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      font-size: 15px;
-      transition: 0.2s;
-    }
-    .btn:hover { opacity: 0.85; }
-    .btn-back { background: #444; color: white; }
-    .btn-logout { background: #e74c3c; color: white; }
-    .btn-reset { background: #3498db; color: white; }
-    .btn-unlink { background: #f39c12; color: white; }
+    .btn { display:block; margin:10px 0; padding:10px 14px; border:none; border-radius:8px; cursor:pointer; font-size:15px; transition:0.2s; }
+    .btn:hover { opacity:0.85; }
+    .btn-back { background:#444; color:white; }
+    .btn-logout { background:#e74c3c; color:white; }
+    .btn-reset { background:#3498db; color:white; }
+    .btn-unlink { background:#f39c12; color:white; }
   </style>
 </head>
 <body>
@@ -70,18 +55,22 @@
 
 <div class="container">
   <h2>Your Profile</h2>
+
   <div class="info-row">
     <span class="info-label">Name:</span>
     <span id="name">Loading...</span>
   </div>
+
   <div class="info-row">
     <span class="info-label">Email:</span>
     <span id="email">Loading...</span>
   </div>
+
   <div class="info-row">
     <span class="info-label">RFID Linked:</span>
     <span id="rfid" class="uid">Checking...</span>
   </div>
+
   <div class="info-row">
     <span class="info-label">User ID:</span>
     <span id="uid" class="uid">---</span>
@@ -94,119 +83,130 @@
 </div>
 
 <script type="module">
- import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
-import { getAuth, onAuthStateChanged, signOut, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
-import { getDatabase, ref, onValue, get, set, update, remove } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-database.js";
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
+  import { getAuth, onAuthStateChanged, signOut, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
+  import { getDatabase, ref, onValue, get, set, update, remove } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-database.js";
 
-// Firebase config
-const firebaseConfig = {
-  apiKey: "AIzaSyDW5APPZMu-lojVRNg89ZDBEY14YD77xd4",
-  authDomain: "ecolife--v1.firebaseapp.com",
-  databaseURL: "https://ecolife--v1-default-rtdb.europe-west1.firebasedatabase.app",
-  projectId: "ecolife--v1"
-};
+  // ---- Firebase config ----
+  const firebaseConfig = {
+    apiKey: "AIzaSyDW5APPZMu-lojVRNg89ZDBEY14YD77xd4",
+    authDomain: "ecolife--v1.firebaseapp.com",
+    databaseURL: "https://ecolife--v1-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId: "ecolife--v1"
+  };
 
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getDatabase(app);
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getDatabase(app);
 
-let currentUID = null;
-let linkedRFID = null;
+  // ---- UI elements ----
+  const nameEl  = document.getElementById("name");
+  const emailEl = document.getElementById("email");
+  const uidEl   = document.getElementById("uid");
+  const rfidEl  = document.getElementById("rfid");
+  const unlinkBtn = document.getElementById("unlinkBtn");
 
-// Helper to fetch points for a UID
-async function fetchUIDPoints(rfid) {
-  if (!rfid) return 0;
+  // ---- state ----
+  let currentUserId = null;
+  let currentRFID = null;
+  let unsubscribePoints = null; // to detach previous listener
 
-  // Check linked first
-  const linkedSnap = await get(ref(db, `linked_uids/${rfid}/points`));
-  if (linkedSnap.exists()) return linkedSnap.val();
+  // Helper: attach live points listener for a given RFID
+  function listenRFIDPoints(rfid) {
+    if (unsubscribePoints) { unsubscribePoints(); unsubscribePoints = null; }
+    if (!rfid) return;
 
-  // If not linked, check unlinked
-  const unlinkedSnap = await get(ref(db, `unlinked_uids/${rfid}/points`));
-  if (unlinkedSnap.exists()) return unlinkedSnap.val();
+    const pointsRef = ref(db, `linked_uids/${rfid}/points`);
+    unsubscribePoints = onValue(pointsRef, (snap) => {
+      const pts = snap.exists() ? snap.val() : 0;
+      rfidEl.textContent = `${rfid} (Points: ${pts})`;
+    });
+  }
 
-  return 0;
-}
+  // Auth / profile load
+  onAuthStateChanged(auth, async (user) => {
+    if (!user) { window.location.href = "login.html"; return; }
 
-onAuthStateChanged(auth, async (user) => {
-  if (!user) { window.location.href = "index.html"; return; }
+    currentUserId = user.uid;
+    nameEl.textContent  = user.displayName || user.email || "User";
+    emailEl.textContent = user.email || "—";
+    uidEl.textContent   = user.uid;
 
-  currentUID = user.uid;
-  document.getElementById("name").textContent = user.displayName || user.email || "User";
-  document.getElementById("email").textContent = user.email;
-  document.getElementById("uid").textContent = user.uid;
+    const userRef = ref(db, `users/${user.uid}`);
+    onValue(userRef, (snap) => {
+      const data = snap.val() || {};
+      currentRFID = data.rfid || null;
 
-  const userRef = ref(db, 'users/' + user.uid);
-  onValue(userRef, async (snapshot) => {
-    const data = snapshot.val() || {};
-    linkedRFID = data?.rfid || null;
-    document.getElementById("rfid").textContent = linkedRFID || "Not linked";
-    document.getElementById("unlinkBtn").style.display = linkedRFID ? "block" : "none";
-
-    // Fetch points from the UID itself
-    const points = await fetchUIDPoints(linkedRFID);
-    if (linkedRFID) {
-      document.getElementById("rfid").textContent = `${linkedRFID} (Points: ${points})`;
-    }
+      if (!currentRFID) {
+        rfidEl.textContent = "Not linked";
+        unlinkBtn.style.display = "none";
+        if (unsubscribePoints) { unsubscribePoints(); unsubscribePoints = null; }
+      } else {
+        unlinkBtn.style.display = "block";
+        // Show points live from linked_uids/<rfid>/points
+        listenRFIDPoints(currentRFID);
+      }
+    });
   });
-});
 
-// Unlink RFID but keep points in UID
-window.unlinkRFID = async () => {
-  if (!currentUID) { alert("You must be logged in to unlink RFID."); return; }
+  // Unlink RFID: keep points with the tag (move to unlinked_uids), clear user’s rfid + points
+  window.unlinkRFID = async () => {
+    if (!currentUserId) { alert("You must be logged in to unlink RFID."); return; }
 
-  const userRef = ref(db, `users/${currentUID}/rfid`);
-  const snapshot = await get(userRef);
-  if (!snapshot.exists()) { alert("No RFID linked to this account."); return; }
+    const rfidRef = ref(db, `users/${currentUserId}/rfid`);
+    const rfidSnap = await get(rfidRef);
+    if (!rfidSnap.exists()) { alert("No RFID linked to this account."); return; }
 
-  const rfid = snapshot.val();
-  try {
-    // Remove RFID and user points
-    await update(ref(db, `users/${currentUID}`), { rfid: null, points: 0 });
+    const rfid = rfidSnap.val();
 
-    // Remove from rfid_to_user
-    await remove(ref(db, `rfid_to_user/${rfid}`));
+    try {
+      // 1) Move points from linked_uids -> unlinked_uids (if linked exists)
+      const linkedRef = ref(db, `linked_uids/${rfid}`);
+      const linkedSnap = await get(linkedRef);
+      if (linkedSnap.exists()) {
+        await set(ref(db, `unlinked_uids/${rfid}`), linkedSnap.val());
+        await remove(linkedRef);
+      }
 
-    // Move linked UID back to unlinked if it exists
-    const linkedSnap = await get(ref(db, `linked_uids/${rfid}`));
-    if (linkedSnap.exists()) {
-      const data = linkedSnap.val(); // only points
-      await set(ref(db, `unlinked_uids/${rfid}`), data);
-      await remove(ref(db, `linked_uids/${rfid}`));
+      // 2) Remove mapping rfid_to_user/<rfid>
+      await remove(ref(db, `rfid_to_user/${rfid}`));
+
+      // 3) Clear user’s rfid and points (only under their own node)
+      await update(ref(db, `users/${currentUserId}`), { rfid: null, points: 0 });
+
+      // UI tidy
+      if (unsubscribePoints) { unsubscribePoints(); unsubscribePoints = null; }
+      currentRFID = null;
+      rfidEl.textContent = "Not linked";
+      unlinkBtn.style.display = "none";
+
+      alert(`RFID ${rfid} unlinked successfully.`);
+    } catch (err) {
+      console.error(err);
+      alert("Error unlinking RFID: " + (err?.message || err));
     }
+  };
 
-    linkedRFID = null;
-    document.getElementById("rfid").textContent = "Not linked";
-    document.getElementById("unlinkBtn").style.display = "none";
+  // Logout
+  window.logout = () => signOut(auth).then(() => window.location.href = "login.html");
 
-    alert(`RFID ${rfid} unlinked successfully.`);
-  } catch (err) {
-    console.error(err);
-    alert("Error unlinking RFID: " + err.message);
-  }
-};
+  // Password reset
+  window.resetPassword = () => {
+    const user = auth.currentUser;
+    if (user?.email) {
+      sendPasswordResetEmail(auth, user.email)
+        .then(() => alert("Password reset email sent to " + user.email))
+        .catch(err => alert("Error: " + (err?.message || err)));
+    } else {
+      alert("No email found for this account.");
+    }
+  };
 
-// Logout
-window.logout = () => signOut(auth).then(() => window.location.href = "index.html");
+  // Mobile nav
+  window.toggleMobileNav = () => document.getElementById("mobileDropdown").classList.toggle("show");
 
-// Reset Password
-window.resetPassword = () => {
-  const user = auth.currentUser;
-  if (user?.email) {
-    sendPasswordResetEmail(auth, user.email)
-      .then(() => alert("Password reset email sent to " + user.email))
-      .catch(err => alert("Error: " + err.message));
-  }
-};
-
-// Mobile nav
-window.toggleMobileNav = () => document.getElementById("mobileDropdown").classList.toggle("show");
-
+  // Gear icon (just send them back to dashboard)
+  window.toggleSettings = () => window.location.href = "dashboard.html";
 </script>
-
 </body>
 </html>
-
-
-
-
