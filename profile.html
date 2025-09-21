@@ -6,45 +6,25 @@
   <title>Your Profile – EcoLife</title>
   <link rel="icon" href="favicon.png" type="image/png">
 <style>
-/* ===== HARD OVERRIDES (place FIRST in <head>) ===== */
-:root { --eco-bg:#0a192a; --eco-card:#07121f; --eco-blue:#073763; --eco-text:#ffffff; }
-* { box-sizing: border-box; }
-html, body { margin:0!important; padding:0!important; background:var(--eco-bg)!important; color:var(--eco-text)!important; font-family:system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif!important; }
+ <style>
+    body { background:#0a192a; color:white; font-family: system-ui, sans-serif; margin:0; padding:0; }
 
-/* Topnav — enforced */
-.topnav {
-  display:flex!important; justify-content:space-between!important; align-items:center!important;
-  padding:1rem!important; background:#0a192a!important; color:#fff!important; position:relative!important; z-index:1000!important;
-}
-.topnav .nav-center { font-size:1.2rem!important; font-weight:700!important; }
-.topnav .gear { font-size:1.5rem!important; cursor:pointer!important; color:#fff!important; }
-.topnav .nav-links { display:flex!important; gap:1rem!important; align-items:center!important; }
-.topnav a, .topnav a:visited { color:#fff!important; text-decoration:none!important; font-weight:500!important; }
-.topnav a:hover { text-decoration:underline!important; }
-.hamburger { display:none!important; font-size:1.5rem!important; background:none!important; border:none!important; color:#fff!important; }
+    /* Shared header (matches leaderboard/profile) */
+    .topnav{display:flex;justify-content:space-between;align-items:center;padding:1rem;background:#000;color:#fff}
+    .nav-center{font-size:1.2rem;font-weight:700}
+    .gear{font-size:1.5rem;cursor:pointer;color:#fff}
+    .nav-links{display:flex;gap:1rem;align-items:center}
+    .topnav a,.topnav a:visited{color:#fff!important;text-decoration:none}
+    .topnav a:hover{text-decoration:underline}
+    .hamburger{display:none;font-size:1.5rem;background:none;border:none;color:#fff}
+    @media(max-width:600px){
+      .hamburger{display:block}
+      .nav-links{display:none}
+      .nav-dropdown{display:none;position:absolute;right:1rem;top:3.5rem;background:#073763;flex-direction:column;padding:1rem;border-radius:6px;z-index:999}
+      .nav-dropdown.show{display:flex}
+      .nav-dropdown a{color:white;margin:0.5rem 0;text-decoration:none}
+    }
 
-/* Mobile dropdown */
-@media (max-width:600px){
-/* Base: always hidden unless mobile + .show */
-.nav-dropdown{
-  display:none;
-  position:absolute;
-  right:1rem;
-  top:3.5rem;
-  background:#073763;
-  flex-direction:column;
-  padding:1rem;
-  border-radius:6px;
-  z-index:999;
-}
-
-/* Mobile behavior */
-@media (max-width:600px){
-  .hamburger{ display:block; }
-  .nav-links{ display:none; }
-  .nav-dropdown.show{ display:flex; }  /* only becomes visible on mobile when .show is added */
-  .nav-dropdown a{ color:#fff; margin:.5rem 0; text-decoration:none; }
-}
 
 
 /* Cards / layout */
@@ -277,5 +257,6 @@ html, body { margin:0!important; padding:0!important; background:var(--eco-bg)!i
   </script>
 </body>
 </html>
+
 
 
