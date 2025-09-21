@@ -70,9 +70,12 @@
 </div>
 
 <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { getAuth, createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, updateProfile } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-  import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
+  import {
+    getAuth, createUserWithEmailAndPassword, GoogleAuthProvider,
+    signInWithPopup, updateProfile, onAuthStateChanged
+  } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
+  import { getDatabase, ref, set, update, get } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-database.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyDW5APPZMu-lojVRNg89ZDBEY14YD77xd4",
@@ -83,66 +86,79 @@
 
   const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
-  const db = getDatabase(app);
+  const db   = getDatabase(app);
 
-  const signupForm = document.getElementById("signupForm");
+  const signupForm  = document.getElementById("signupForm");
   const signupError = document.getElementById("signupError");
+  const nameInput   = document.getElementById("fullName");
 
+  // Prefill name if user is already signed in and has displayName
+  onAuthStateChanged(auth, (user) => {
+    if (user?.displayName && nameInput) nameInput.value = user.displayName;
+  });
+
+  // Email/password signup
   signupForm.addEventListener("submit", async (e) => {
     e.preventDefault();
-    const name = document.getElementById("fullName").value.trim();
+    const name = nameInput.value.trim();
     const email = document.getElementById("signupEmail").value.trim();
     const password = document.getElementById("signupPassword").value;
     signupError.textContent = "";
-    
-    //passowrd validation twin
-if (password.length < 8) {
-  signupError.textContent = "Password must be at least 8 characters.";
-  return;
-}
 
+    if (password.length < 8) {
+      signupError.textContent = "Password must be at least 8 characters.";
+      return;
+    }
 
     try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
-      await updateProfile(user, { displayName: name });
-      // Save to database
-      await set(ref(db, 'users/' + user.uid), { name: name, email: email, points: 0 });
+      const { user } = await createUserWithEmailAndPassword(auth, email, password);
+      if (name) await updateProfile(user, { displayName: name });
+
+      // Upsert (avoid wiping other fields later)
+      await update(ref(db, `users/${user.uid}`), {
+        name: name || user.displayName || (email.split("@")[0]),
+        email,
+        points: 0
+      });
+
       document.cookie = "loggedIn=true; path=/";
       window.location.href = "dashboard.html";
     } catch (err) {
       signupError.textContent = err.message;
+      console.error(err);
     }
   });
 
-  // Google Sign-up
-// Google Sign-up
-const googleBtn = document.getElementById("googleSignupBtn");
-googleBtn.addEventListener("click", async () => {
-  const provider = new GoogleAuthProvider();
-  try {
-    const result = await signInWithPopup(auth, provider);
-    const user = result.user;
+  // Google signup
+  document.getElementById("googleSignupBtn").addEventListener("click", async () => {
+    const provider = new GoogleAuthProvider();
+    try {
+      const { user } = await signInWithPopup(auth, provider);
 
-    let name = user.displayName;
-    if (!name) {
-      // Ask user for name if Google account has no displayName
-      name = prompt("Please enter your full name:", "");
-      if (!name) name = "User";
-      await updateProfile(user, { displayName: name });
+      // Prefill the name field in case you also show it
+      if (user.displayName && nameInput) nameInput.value = user.displayName;
+
+      // If Google has no name, prompt once and store it
+      let name = user.displayName;
+      if (!name) {
+        name = prompt("Please enter your full name:", "") || "User";
+        await updateProfile(user, { displayName: name });
+      }
+
+      // Upsert user node
+      await update(ref(db, `users/${user.uid}`), {
+        name: name,
+        email: user.email || null,
+        points: 0
+      });
+
+      document.cookie = "loggedIn=true; path=/";
+      window.location.href = "dashboard.html";
+    } catch (err) {
+      signupError.textContent = "Google signup failed. Make sure your domain is authorized.";
+      console.error(err);
     }
-
-    // Save user to database
-    await set(ref(db, 'users/' + user.uid), { name: name, email: user.email, points: 0 });
-    document.cookie = "loggedIn=true; path=/";
-    window.location.href = "dashboard.html";
-
-  } catch (err) {
-    signupError.textContent = "Google signup failed. Make sure your domain is authorized.";
-    console.error(err);
-  }
-});
-
+  });
 </script>
 
 <script>
@@ -198,6 +214,7 @@ googleBtn.addEventListener("click", async () => {
     n.OpenWidget = n.OpenWidget || e;
   }(window, document, [].slice))
 </script>
+
 
 
 
