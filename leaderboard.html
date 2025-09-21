@@ -183,7 +183,7 @@
       const sorted = [...rows].sort((a,b)=>(b.points||0)-(a.points||0));
       render(sorted);
     }, (err)=>{
-      boardEl.innerHTML = `<li>Error loading leaderboard: ${err?.message||"Permission denied"}</li>`;
+      boardEl.innerHTML = `<li>Error loading leaderboard: ${err?.message||"Must Be Logged In."}</li>`;
     });
 
     // nav helpers
@@ -200,3 +200,4 @@
   </script>
 </body>
 </html>
+
