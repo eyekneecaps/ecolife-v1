@@ -201,39 +201,75 @@ onAuthStateChanged(auth, async (user)=>{
   });
 });
 
-// RFID linking function (shared by both inline and modal)
 async function linkRFID(uidValue, inputEl, messageEl, buttonEl){
   clearMessage(messageEl);
-  uidValue = (uidValue||"").trim();
-  if(!uidValue){ showMessage(messageEl,"Enter a valid UID."); return; }
-  if(currentUserRFID){ showMessage(messageEl,"You already have a linked RFID."); return; }
+  uidValue = (uidValue||"").trim().toUpperCase();
+  if (!uidValue) { showMessage(messageEl, "Enter a valid UID."); return; }
+  if (currentUserRFID) { showMessage(messageEl, "You already have a linked RFID."); return; }
 
-  try{
-    const unlinkedRef = ref(db, `unlinked_uids/${uidValue}`);
-    const snap = await get(unlinkedRef);
-    if(!snap.exists()){ showMessage(messageEl,"This RFID is not available."); return; }
+  try {
+    // Find which unlinked branch exists
+    const unlinkedRef1 = ref(db, `_unlinked_uids/${uidValue}`);
+    const unlinkedRef2 = ref(db, `unlinked_uids/${uidValue}`);
+    let unlinkedRef = unlinkedRef1;
+    let snap = await get(unlinkedRef1);
+    if (!snap.exists()) {
+      snap = await get(unlinkedRef2);
+      if (snap.exists()) unlinkedRef = unlinkedRef2;
+    }
+    if (!snap.exists()) { showMessage(messageEl, "This RFID is not available in unlinked pool."); return; }
+    const points = Number(snap.val()?.points || 0);
 
-    const points = snap.val()?.points||0;
+    // If mapping exists to someone else, bail
+    const mapRef = ref(db, `rfid_to_user/${uidValue}`);
+    const existing = (await get(mapRef)).val();
+    if (existing && existing !== currentUser.uid) {
+      showMessage(messageEl, "This RFID is already linked to another account."); return;
+    }
 
-    await update(ref(db),{
-      [`users/${currentUser.uid}/rfid`]: uidValue,
-      [`users/${currentUser.uid}/points`]: points,
-      [`rfid_to_user/${uidValue}`]: { uid: currentUser.uid, points },
-      [`linked_uids/${uidValue}`]: { points }
-    });
-    await remove(unlinkedRef);
+    // Step 1: user fields
+    try {
+      await update(ref(db, `users/${currentUser.uid}`), { rfid_uid: uidValue, points });
+    } catch (e) {
+      console.error("users write failed:", e);
+      showMessage(messageEl, "Denied writing to users/<uid>. Check rules."); return;
+    }
 
+    // Step 2: mapping (write-once string)
+    try {
+      await set(mapRef, currentUser.uid);
+    } catch (e) {
+      console.error("rfid_to_user set failed:", e);
+      showMessage(messageEl, "Denied creating rfid_to_user mapping. Ensure rule allows write-once string equal to your uid."); return;
+    }
+
+    // Step 3: linked_uids points (requires mapping == auth.uid)
+    try {
+      await update(ref(db, `linked_uids/${uidValue}`), { points });
+    } catch (e) {
+      console.error("linked_uids write failed:", e);
+      showMessage(messageEl, "Denied writing linked_uids/<UID>. Rule must allow if mapping points to you."); return;
+    }
+
+    // Step 4: remove from unlinked pool (non-fatal if fails)
+    try { await remove(unlinkedRef); } catch (e) { console.warn("unlinked remove failed:", e); }
+
+    // UI
     currentUserRFID = uidValue;
     linkedRFIDEl.textContent = uidValue;
     userPointsEl.textContent = points;
     updateDashboardTable(uidValue, points);
-
-    inputEl.disabled = true;
-    if(buttonEl) buttonEl.style.display="none";
-    showMessage(messageEl, `RFID ${uidValue} linked successfully.`,"success");
+    if (inputEl) inputEl.disabled = true;
+    if (buttonEl) buttonEl.style.display = "none";
+    showMessage(messageEl, `RFID ${uidValue} linked successfully.`, "success");
     closeRFIDModal();
-  } catch(err){ console.error(err); showMessage(messageEl,"Error linking RFID."); }
+
+  } catch (err) {
+    console.error(err);
+    showMessage(messageEl, `Error linking RFID: ${err?.message || err}`, "error");
+  }
 }
+
 
 // Inline linking
 linkButton.addEventListener("click", ()=>linkRFID(rfidInput.value, rfidInput, rfidMessage, linkButton));
