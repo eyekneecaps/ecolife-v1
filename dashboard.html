@@ -1,56 +1,71 @@
 <!DOCTYPE html>
 <html lang="en" data-theme="dark">
 <head>
-    <link rel="icon" href="favicon.png" type="image/png">
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Dashboard – EcoLife</title>
-<link rel="stylesheet" href="style.css" />
-<style>
-  body { background:#0a192a; color:white; font-family: system-ui, sans-serif; margin:0; padding:0; }
-  .topnav { display:flex; justify-content:space-between; align-items:center; padding:1rem; background-color:#000; }
-  .gear { font-size:1.5rem; cursor:pointer; color:white; }
-  .hamburger { display:none; font-size:1.5rem; background:none; border:none; color:white; }
-  @media(max-width:600px){.hamburger{display:block}.nav-dropdown{display:none;position:absolute;right:1rem;top:3.5rem;background:#073763;flex-direction:column;padding:1rem;border-radius:6px;z-index:999}.nav-dropdown.show{display:flex}.nav-dropdown a{color:white;margin:0.5rem 0;text-decoration:none}}
-  .auth-box{max-width:1000px;margin:2.5rem auto;padding:1.5rem;}
-  .card{background:#07121f;padding:1.25rem;border-radius:10px;margin-bottom:1rem;box-shadow:0 4px 10px rgba(0,0,0,0.45);}
-  .card h2, .card h3{margin-top:0;}
-  .rfid-card{background:#111;padding:1.5rem;border-radius:10px;margin-top:1rem;}
-  #rfidInput, #modalRfidInput{width:100%;padding:0.7rem;margin-top:0.5rem;border-radius:8px;border:1px solid #333;background:#222;color:white;}
-  .rfid-link-btn{padding:0.6rem 1rem;background:#073763;color:white;border:none;border-radius:6px;cursor:pointer;margin-left:0.5rem;}
-  .rfid-link-btn:hover{filter: brightness(1.05);}
-  #rfidMessage, #modalRfidMessage{margin-top:0.8rem;font-size:0.95rem;}
-  table{width:100%;border-collapse:collapse;color:white;margin-top:1rem;}
-  table th, table td{text-align:left;padding:0.6rem 0.75rem;border-bottom:1px solid rgba(255,255,255,0.04);}
-  table th{font-weight:600;color:#cfd8dc;}
-  .inline{display:inline-block;vertical-align:middle;}
-  .success{color:#84cc16;}
-  .error{color:#ff6b6b;}
-</style>
+  <link rel="icon" href="favicon.png" type="image/png">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Dashboard – EcoLife</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    body { background:#0a192a; color:white; font-family: system-ui, sans-serif; margin:0; padding:0; }
+
+    /* Shared header (matches leaderboard/profile) */
+    .topnav{display:flex;justify-content:space-between;align-items:center;padding:1rem;background:#000;color:#fff}
+    .nav-center{font-size:1.2rem;font-weight:700}
+    .gear{font-size:1.5rem;cursor:pointer;color:#fff}
+    .nav-links{display:flex;gap:1rem;align-items:center}
+    .topnav a,.topnav a:visited{color:#fff!important;text-decoration:none}
+    .topnav a:hover{text-decoration:underline}
+    .hamburger{display:none;font-size:1.5rem;background:none;border:none;color:#fff}
+    @media(max-width:600px){
+      .hamburger{display:block}
+      .nav-links{display:none}
+      .nav-dropdown{display:none;position:absolute;right:1rem;top:3.5rem;background:#073763;flex-direction:column;padding:1rem;border-radius:6px;z-index:999}
+      .nav-dropdown.show{display:flex}
+      .nav-dropdown a{color:white;margin:0.5rem 0;text-decoration:none}
+    }
+
+    .auth-box{max-width:1000px;margin:2.5rem auto;padding:1.5rem;}
+    .card{background:#07121f;padding:1.25rem;border-radius:10px;margin-bottom:1rem;box-shadow:0 4px 10px rgba(0,0,0,0.45);}
+    .card h2,.card h3{margin-top:0;}
+    .rfid-card{background:#111;padding:1.5rem;border-radius:10px;margin-top:1rem;}
+    #rfidInput,#modalRfidInput{width:100%;padding:0.7rem;margin-top:0.5rem;border-radius:8px;border:1px solid #333;background:#222;color:white;}
+    .rfid-link-btn{padding:0.6rem 1rem;background:#073763;color:white;border:none;border-radius:6px;cursor:pointer;margin-left:0.5rem;}
+    .rfid-link-btn:hover{filter: brightness(1.05);}
+    #rfidMessage,#modalRfidMessage{margin-top:0.8rem;font-size:0.95rem;}
+    table{width:100%;border-collapse:collapse;color:white;margin-top:1rem;}
+    table th,table td{text-align:left;padding:0.6rem 0.75rem;border-bottom:1px solid rgba(255,255,255,0.04);}
+    table th{font-weight:600;color:#cfd8dc;}
+    .inline{display:inline-block;vertical-align:middle;}
+    .success{color:#84cc16;}
+    .error{color:#ff6b6b;}
+  </style>
 </head>
 <body>
 
-<!-- TOP NAVIGATION -->
+<!-- TOP NAV -->
 <nav class="topnav">
-  <div class="nav-left">
-    <span class="gear" onclick="window.location.href='profile.html'">⚙️</span>
-  </div>
+  <div class="nav-left"><span class="gear" onclick="location.href='profile.html'">⚙️</span></div>
   <div class="nav-center"><strong>EcoLife</strong></div>
-  <div class="nav-right desktop-links">
-    <a href="index.html">About Us</a>
+  <div class="nav-right nav-links">
+    <a href="index.html">About</a>
     <a href="products.html">Services</a>
-    <a href="dashboard.html" onclick="checkLogin(event)">Dashboard</a>
+    <a href="dashboard.html">Dashboard</a>
     <a href="leaderboard.html">Leaderboard</a>
+    <a href="signup.html" id="signupLink">Sign Up</a>
+    <a href="login.html"  id="loginLink">Login</a>
   </div>
-  <button class="hamburger" onclick="toggleMobileNav()">☰</button>
+  <button class="hamburger" onclick="document.getElementById('mobileDropdown').classList.toggle('show')">☰</button>
 </nav>
 
 <!-- MOBILE DROPDOWN -->
 <div class="nav-dropdown" id="mobileDropdown">
-  <a href="index.html">About Us</a>
+  <a href="index.html">About</a>
   <a href="products.html">Services</a>
-  <a href="dashboard.html" onclick="checkLogin(event)">Dashboard</a>
+  <a href="dashboard.html">Dashboard</a>
   <a href="leaderboard.html">Leaderboard</a>
+  <a href="signup.html" id="signupLinkMobile">Sign Up</a>
+  <a href="login.html"  id="loginLinkMobile">Login</a>
 </div>
 
 <!-- Settings Panel -->
@@ -110,7 +125,7 @@
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
-import { getDatabase, ref, get, set, update, remove, onValue } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-database.js";
+import { getDatabase, ref, get, set, update, remove, onValue, runTransaction } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-database.js";
 import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
 
 const firebaseConfig = {
@@ -156,20 +171,21 @@ function updateDashboardTable(rfid, points){
 onAuthStateChanged(auth, (user) => {
   if (!user) { window.location.href = "login.html"; return; }
   currentUser = user;
-  userNameEl.textContent = user.displayName || "User";
+  userNameEl.textContent = user.displayName || user.email || "User";
   userIdEl.textContent = user.uid;
 
   const userRef = ref(db, `users/${user.uid}`);
   onValue(userRef, (snap) => {
     const data = snap.val() || {};
-    currentUserRFID = data.rfid_uid || null;     // <<< use rfid_uid
+    // prefer 'rfid' (new), fallback to 'rfid_uid' (legacy)
+    currentUserRFID = data.rfid || data.rfid_uid || null;
     linkedRFIDEl.textContent = currentUserRFID || "Not linked";
 
-    if (unsubscribePoints) { unsubscribePoints(); unsubscribePoints = null; }
+    if (unsubscribePoints) { try{unsubscribePoints();}catch{} unsubscribePoints = null; }
 
     if (!currentUserRFID) {
       rfidSection.style.display = "block";
-      userPointsEl.textContent = data.points || "0";
+      userPointsEl.textContent = Number(data.points || 0);
       updateDashboardTable(null, null);
     } else {
       rfidSection.style.display = "none";
@@ -183,47 +199,59 @@ onAuthStateChanged(auth, (user) => {
   });
 });
 
-// Link RFID (SEQUENTIAL writes; NEVER update at "/")
+/**
+ * Robust link (transaction):
+ * - Claims rfid_to_user/<rfid> if empty or already mine.
+ * - Converts legacy string rows to { uid } if they belong to me.
+ * - Seeds linked_uids/<rfid>/points from unlinked pool.
+ * - Writes users/<uid>/rfid (and rfid_uid for backward compat).
+ */
 async function linkRFID(uidValue, inputEl, messageEl, buttonEl){
   clearMessage(messageEl);
   uidValue = (uidValue||"").trim().toUpperCase();
   if (!uidValue) { showMessage(messageEl, "Enter a valid UID."); return; }
+  if (!currentUser) { showMessage(messageEl, "Not logged in."); return; }
   if (currentUserRFID) { showMessage(messageEl, "You already have a linked RFID."); return; }
 
   try {
-    // Which unlinked branch exists?
-    const unlinked1 = ref(db, `_unlinked_uids/${uidValue}`);
-    const unlinked2 = ref(db, `unlinked_uids/${uidValue}`);
-    let unlinkedRef = unlinked1;
-    let snap = await get(unlinked1);
+    // read unlinked points (support both keys just in case)
+    let points = 0;
+    let unlinkedRef = ref(db, `unlinked_uids/${uidValue}`);
+    let snap = await get(unlinkedRef);
     if (!snap.exists()) {
-      const snap2 = await get(unlinked2);
-      if (!snap2.exists()) { showMessage(messageEl, "This UID is not available in the unlinked pool."); return; }
-      unlinkedRef = unlinked2; snap = snap2;
+      const alt = ref(db, `_unlinked_uids/${uidValue}`);
+      const altSnap = await get(alt);
+      if (altSnap.exists()) { unlinkedRef = alt; snap = altSnap; }
     }
-    const points = Number(snap.val()?.points || 0);
+    if (snap?.exists()) points = Number(snap.val()?.points || 0);
 
-    // If already mapped to someone else, block
+    // transactional claim of rfid_to_user
     const mapRef = ref(db, `rfid_to_user/${uidValue}`);
-    const existing = (await get(mapRef)).val();
-    if (existing && existing !== currentUser.uid) {
-      showMessage(messageEl, "This UID is already linked to another account."); return;
+    const txn = await runTransaction(mapRef, (current) => {
+      if (current === null) return { uid: currentUser.uid };                 // claim
+      if (typeof current === "string") {
+        if (current === currentUser.uid) return { uid: currentUser.uid };    // convert my legacy string
+        return;                                                               // someone else → abort
+      }
+      if (current && typeof current === "object" && current.uid === currentUser.uid) {
+        return current;                                                       // idempotent
+      }
+      return;                                                                 // someone else → abort
+    }, { applyLocally:false });
+
+    if (!txn.committed) {
+      showMessage(messageEl, "This UID is already linked to another account.");
+      return;
     }
 
-    // STEP 1: user fields (allowed by users/$uid rule)
-    try { await update(ref(db, `users/${currentUser.uid}`), { rfid_uid: uidValue, points }); }
-    catch(e){ console.error("STEP 1 users/<uid> denied:", e); showMessage(messageEl, "Denied: users/<uid> write."); return; }
+    // seed linked points + write user fields
+    await Promise.all([
+      set(ref(db, `linked_uids/${uidValue}/points`), points),
+      update(ref(db, `users/${currentUser.uid}`), { rfid: uidValue, rfid_uid: uidValue, points })
+    ]);
 
-    // STEP 2: create/confirm mapping (STRING == auth.uid; write-once)
-    try { await set(mapRef, currentUser.uid); }
-    catch(e){ console.error("STEP 2 rfid_to_user set denied:", e); showMessage(messageEl, "Denied: rfid_to_user/<UID> write."); return; }
-
-    // STEP 3: seed linked_uids/<UID>/points (requires mapping == auth.uid)
-    try { await set(ref(db, `linked_uids/${uidValue}/points`), points); }
-    catch(e){ console.error("STEP 3 linked_uids write denied:", e); showMessage(messageEl, "Denied: linked_uids/<UID> write."); return; }
-
-    // STEP 4: remove from unlinked pool (non-fatal)
-    try { await remove(unlinkedRef); } catch(e){ console.warn("STEP 4 unlinked remove failed (non-fatal):", e); }
+    // remove from unlinked pool (best effort)
+    try { await remove(unlinkedRef); } catch {}
 
     // UI
     currentUserRFID = uidValue;
@@ -237,13 +265,13 @@ async function linkRFID(uidValue, inputEl, messageEl, buttonEl){
 
   } catch (err) {
     console.error("Link error:", err);
-    showMessage(messageEl, `Error linking RFID: ${err?.message || err}`, "error");
+    showMessage(messageEl, `Error: ${err?.message || err}`, "error");
   }
 }
 
 // Buttons
-linkButton.addEventListener("click", () => linkRFID(rfidInput.value, rfidInput, rfidMessage, linkButton));
-modalLinkBtn.addEventListener("click", () => linkRFID(modalInput.value, modalInput, modalMessage, modalLinkBtn));
+document.getElementById("linkButton").addEventListener("click", () => linkRFID(rfidInput.value, rfidInput, rfidMessage, linkButton));
+document.getElementById("modalLinkBtn").addEventListener("click", () => linkRFID(modalInput.value, modalInput, modalMessage, modalLinkBtn));
 
 // Modal helpers
 function openRFIDModal(){ modal.style.display = "flex"; modalInput.value=""; clearMessage(modalMessage); }
@@ -252,7 +280,6 @@ window.openRFIDModal = openRFIDModal;
 
 // Misc
 window.logout = () => signOut(auth).then(()=>window.location.href="login.html");
-window.toggleMobileNav = () => document.getElementById("mobileDropdown").classList.toggle("show");
 document.querySelector(".gear").addEventListener("click", ()=>{
   const panel = document.getElementById("settingsPanel");
   panel.style.display = panel.style.display === "none" ? "block" : "none";
@@ -260,47 +287,17 @@ document.querySelector(".gear").addEventListener("click", ()=>{
 window.checkLogin = (e)=>{ if (!currentUser) { e.preventDefault(); alert("You must be logged in to access the dashboard."); } };
 </script>
 
-
+<!-- Chatbot -->
 <script>
-    // <!-- Start of ChatBot (www.chatbot.com) code -->
-
   window._ow = window._ow || {};
   window.__ow = window.__ow || {};
   window.__ow.organizationId = "d8d1b35d-3974-4620-802f-b6383b2e7a1c";
   window.__ow.template_id = "7d4a29cb-ee55-4528-803a-d58f9fe8d3fc";
   window.__ow.integration_name = "manual_settings";
-  window.__ow.product_name = "chatbot";   
-
-  (function(n, t, c) {
-    function i(n) { 
-      return e.h ? e._h.apply(null, n) : e._q.push(n); 
-    }
-    var e = {
-      _q: [],
-      _h: null,
-      _v: "2.0",
-      on: function() { i(["on", c.call(arguments)]) },
-      once: function() { i(["once", c.call(arguments)]) },
-      off: function() { i(["off", c.call(arguments)]) },
-      get: function() {
-        if (!e._h) throw new Error("[OpenWidget] You can't use getters before load.");
-        return i(["get", c.call(arguments)]);
-      },
-      call: function() { i(["call", c.call(arguments)]) },
-      init: function() {
-        var n = t.createElement("script");
-        n.async = !0;
-        n.type = "text/javascript";
-        n.src = "https://cdn.openwidget.com/openwidget.js";
-        t.head.appendChild(n);
-      }
-    };
-    !n._ow.asyncInit && e.init();
-    n.OpenWidget = n.OpenWidget || e;
-  }(window, document, [].slice))
+  window.__ow.product_name = "chatbot";
+  (function(n,t,c){function i(n){return e.h?e._h.apply(null,n):e._q.push(n)}
+    var e={_q:[],_h:null,_v:"2.0",on:function(){i(["on",c.call(arguments)])},once:function(){i(["once",c.call(arguments)])},off:function(){i(["off",c.call(arguments)])},get:function(){if(!e._h)throw new Error("[OpenWidget] You can't use getters before load.");return i(["get",c.call(arguments)])},call:function(){i(["call",c.call(arguments)])},init:function(){var n=t.createElement("script");n.async=!0;n.type="text/javascript";n.src="https://cdn.openwidget.com/openwidget.js";t.head.appendChild(n)}};!n._ow.asyncInit&&e.init();n.OpenWidget=n.OpenWidget||e})(window,document,[].slice)
 </script>
-
-
 
 </body>
 </html>
