@@ -1,355 +1,202 @@
 <!DOCTYPE html>
 <html lang="en" data-theme="dark">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Leaderboard – EcoLife</title>
-    <link rel="stylesheet" href="style.css" />
-    <style>
-        body {
-            background: #0a192a;
-            color: white;
-            font-family: system-ui, sans-serif;
-            margin: 0;
-            padding: 0;
-        }
-
-        .topnav {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 1rem;
-            background: #000;
-            color: white;
-        }
-
-        .nav-center {
-            font-size: 1.5rem;
-        }
-
-        .gear {
-            font-size: 1.5rem;
-            cursor: pointer;
-        }
-
-        .nav-links {
-            display: flex;
-            gap: 1rem;
-        }
-
-        .nav-links a {
-            color: white;
-            text-decoration: none;
-        }
-
-        .nav-links a:hover {
-            text-decoration: underline;
-        }
-
-        .hamburger {
-            display: none;
-            font-size: 1.5rem;
-            background: none;
-            border: none;
-            color: white;
-        }
-
-        @media(max-width: 600px) {
-            .hamburger {
-                display: block;
-            }
-            .nav-links {
-                display: none;
-            }
-            .nav-dropdown {
-                display: none;
-                position: absolute;
-                right: 1rem;
-                top: 3.5rem;
-                background: #073763;
-                flex-direction: column;
-                padding: 1rem;
-                border-radius: 6px;
-                z-index: 999;
-            }
-            .nav-dropdown.show {
-                display: flex;
-            }
-            .nav-dropdown a {
-                color: white;
-                margin: 0.5rem 0;
-                text-decoration: none;
-            }
-        }
-
-        #settingsPanel {
-            display: none;
-            position: fixed;
-            top: 4rem;
-            left: 1rem;
-            background: #111;
-            padding: 1rem;
-            border-radius: 8px;
-            z-index: 1001;
-        }
-
-        .logout-btn {
-            color: red;
-            background: none;
-            border: none;
-            text-decoration: underline;
-            cursor: pointer;
-            margin-top: 1rem;
-        }
-
-        #popupMessage {
-            position: fixed;
-            top: 1rem;
-            left: 50%;
-            transform: translateX(-50%);
-            background: #ff4444;
-            color: white;
-            padding: 0.75rem 1.5rem;
-            border-radius: 5px;
-            display: none;
-            z-index: 1002;
-        }
-
-        ul#leaderboardList {
-            list-style: none;
-            padding-left: 0;
-            font-size: 1.1rem;
-        }
-
-        ul#leaderboardList li {
-            margin: 0.5rem 0;
-            padding: 0.75rem 1rem;
-            background: #1d3b5c;
-            border-radius: 6px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .rank {
-            font-weight: bold;
-            color: #84cc16;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Leaderboard – EcoLife</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    body { background:#0a192a; color:white; font-family:system-ui,sans-serif; margin:0; }
+    .topnav { display:flex; justify-content:space-between; align-items:center; padding:1rem; background:#000; color:white; }
+    .nav-center { font-size:1.2rem; font-weight:700; }
+    .nav-links a { color:white; text-decoration:none; margin-left:1rem; }
+    .nav-links a:hover { text-decoration:underline; }
+    .hamburger { display:none; font-size:1.5rem; background:none; border:none; color:white; }
+    @media (max-width:600px){
+      .hamburger { display:block; }
+      .nav-links { display:none; }
+      .nav-dropdown { display:none; position:absolute; right:1rem; top:3.5rem; background:#073763; flex-direction:column; padding:1rem; border-radius:6px; z-index:999; }
+      .nav-dropdown.show { display:flex; }
+      .nav-dropdown a { color:white; margin:.5rem 0; text-decoration:none; }
+    }
+    .card { max-width:800px; margin:2rem auto; background:#07121f; padding:1.25rem; border-radius:12px; box-shadow:0 4px 12px rgba(0,0,0,.5); }
+    ul#board { list-style:none; padding-left:0; }
+    ul#board li { display:flex; justify-content:space-between; align-items:center; padding:.75rem 1rem; border-radius:8px; background:#10223a; margin:.5rem 0; }
+    .rank{ font-weight:700; color:#84cc16; margin-right:.75rem }
+    .name{ font-weight:600 }
+    .points{ opacity:.9 }
+    #popupMessage { position:fixed; top:1rem; left:50%; transform:translateX(-50%); background:#ff4444; color:white; padding:.75rem 1.5rem; border-radius:5px; display:none; z-index:1002; }
+  </style>
 </head>
 <body>
-    <nav class="topnav">
-        <div class="nav-left">
-            <span class="gear" onclick="window.location.href='profile.html'">⚙️</span>
-        </div>
-  <div class="nav-center"><strong>EcoLife</strong></div>
-        <div class="nav-right nav-links">
-            <a href="index.html">About Us</a>
-            <a href="products.html">Services</a>
-            <a href="dashboard.html" onclick="checkLogin(event)">Dashboard</a>
-            <a href="leaderboard.html">Leaderboard</a>
-            <a href="signup.html" id="signupLink">Sign Up</a>
-            <a href="login.html" id="loginLink">Login</a>
-        </div>
-        <button class="hamburger" onclick="toggleMobileNav()">☰</button>
-    </nav>
-
-    <div class="nav-dropdown" id="mobileDropdown">
-        <a href="index.html">About Us</a>
-        <a href="products.html">Services</a>
-        <a href="dashboard.html" onclick="checkLogin(event)">Dashboard</a>
-        <a href="leaderboard.html">Leaderboard</a>
-        <a href="signup.html" id="signupLinkMobile">Sign Up</a>
-        <a href="login.html" id="loginLinkMobile">Login</a>
+  <nav class="topnav">
+    <div class="nav-left">
+      <span class="gear" onclick="location.href='profile.html'">⚙️</span>
     </div>
-
-    <div id="settingsPanel">
-        <button class="logout-btn" onclick="logout()">Log Out</button>
+    <div class="nav-center">EcoLife</div>
+    <div class="nav-right nav-links">
+      <a href="index.html">About</a>
+      <a href="products.html">Services</a>
+      <a href="dashboard.html" onclick="checkLogin(event)">Dashboard</a>
+      <a href="leaderboard.html">Leaderboard</a>
+      <a href="signup.html" id="signupLink">Sign Up</a>
+      <a href="login.html"  id="loginLink">Login</a>
     </div>
+    <button class="hamburger" onclick="toggleMobileNav()">☰</button>
+  </nav>
 
-    <div id="popupMessage">
-        You must be logged in to view the dashboard.
-        <span class="close-btn" onclick="this.parentElement.style.display='none'">✕</span>
-    </div>
+  <div class="nav-dropdown" id="mobileDropdown">
+    <a href="index.html">About</a>
+    <a href="products.html">Services</a>
+    <a href="dashboard.html" onclick="checkLogin(event)">Dashboard</a>
+    <a href="leaderboard.html">Leaderboard</a>
+    <a href="signup.html" id="signupLinkMobile">Sign Up</a>
+    <a href="login.html"  id="loginLinkMobile">Login</a>
+  </div>
 
-    <div class="auth-box" style="max-width:700px;margin:2rem auto;text-align:center;">
-        <h2>🏆 Leaderboard</h2>
-        <ul id="leaderboardList">
-            <li>Loading leaderboard...</li>
-        </ul>
-    </div>
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
-  import {
-    getDatabase, ref, onValue
-  } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-database.js";
-  import {
-    getAuth, onAuthStateChanged, signOut
-  } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
+  <div id="popupMessage">You must be logged in to view the dashboard. <span class="close-btn" onclick="this.parentElement.style.display='none'">✕</span></div>
 
-  const firebaseConfig = {
-    apiKey: "AIzaSyDW5APPZMu-lojVRNg89ZDBEY14YD77xd4",
-    authDomain: "ecolife--v1.firebaseapp.com",
-    databaseURL: "https://ecolife--v1-default-rtdb.europe-west1.firebasedatabase.app",
-    projectId: "ecolife--v1"
-  };
+  <div class="card">
+    <h2>🏆 Leaderboard</h2>
+    <ul id="board"><li>Loading…</li></ul>
+  </div>
 
-  const app = initializeApp(firebaseConfig);
-  const db = getDatabase(app);
-  const auth = getAuth(app);
-  const leaderboardList = document.getElementById("leaderboardList");
+  <!-- Chatbot kept as requested -->
+  <script>
+    window._ow = window._ow || {};
+    window.__ow = window.__ow || {};
+    window.__ow.organizationId = "d8d1b35d-3974-4620-802f-b6383b2e7a1c";
+    window.__ow.template_id     = "7d4a29cb-ee55-4528-803a-d58f9fe8d3fc";
+    window.__ow.integration_name = "manual_settings";
+    window.__ow.product_name     = "chatbot";
+    (function(n, t, c) {
+      function i(n) { return e.h ? e._h.apply(null, n) : e._q.push(n); }
+      var e = { _q:[], _h:null, _v:"2.0",
+        on:function(){ i(["on", c.call(arguments)]) },
+        once:function(){ i(["once", c.call(arguments)]) },
+        off:function(){ i(["off", c.call(arguments)]) },
+        get:function(){ if(!e._h) throw new Error("[OpenWidget] You can't use getters before load."); return i(["get", c.call(arguments)]) },
+        call:function(){ i(["call", c.call(arguments)]) },
+        init:function(){ var n=t.createElement("script"); n.async=!0; n.type="text/javascript"; n.src="https://cdn.openwidget.com/openwidget.js"; t.head.appendChild(n); }
+      };
+      !n._ow.asyncInit && e.init(); n.OpenWidget = n.OpenWidget || e;
+    }(window, document, [].slice))
+  </script>
 
-  // ---------- Auth-driven nav ----------
-  onAuthStateChanged(auth, user => {
-    const isLoggedIn = !!user;
-    document.cookie = `loggedIn=${isLoggedIn}; path=/`;
-    const show = (id, on) => { const el = document.getElementById(id); if (el) el.style.display = on ? "" : "none"; };
-    show("signupLink", !isLoggedIn);
-    show("loginLink",  !isLoggedIn);
-    show("signupLinkMobile", !isLoggedIn);
-    show("loginLinkMobile",  !isLoggedIn);
-  });
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
+    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
+    import { getDatabase, ref, onValue, get, query, orderByChild, equalTo } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-database.js";
 
-  // ---------- Live data caches ----------
-  let users = {};
-  let rfidToUser = {};
-  let linked = {};
-  let unlinked = {};
+    const firebaseConfig = {
+      apiKey: "AIzaSyDW5APPZMu-lojVRNg89ZDBEY14YD77xd4",
+      authDomain: "ecolife--v1.firebaseapp.com",
+      databaseURL: "https://ecolife--v1-default-rtdb.europe-west1.firebasedatabase.app",
+      projectId: "ecolife--v1"
+    };
 
-  // Debounced re-render to avoid thrash on burst updates
-  let renderTimer = null;
-  function scheduleRender() {
-    if (renderTimer) return;
-    renderTimer = setTimeout(() => { renderTimer = null; render(); }, 50);
-  }
+    const app  = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db   = getDatabase(app);
 
-  // Attach real-time listeners
-  onValue(ref(db, "users"),           snap => { users = snap.val() || {}; scheduleRender(); });
-  onValue(ref(db, "rfid_to_user"),    snap => { rfidToUser = snap.val() || {}; scheduleRender(); });
-  onValue(ref(db, "linked_uids"),     snap => { linked = snap.val() || {}; scheduleRender(); });
-  onValue(ref(db, "_unlinked_uids"),  snap => { unlinked = snap.val() || {}; scheduleRender(); });
+    const boardEl = document.getElementById("board");
 
-  // ---------- Merge + render ----------
-  function render() {
-    const entries = new Map(); // key -> {name, points}
-
-    // 1) seed with users (points may be null)
-    for (const [userId, u] of Object.entries(users)) {
-      const name = (u && (u.name || u.email)) || `User ${userId.slice(0,6)}`;
-      const pts  = Number(u?.points || 0);
-      entries.set(`user:${userId}`, { name, points: pts });
-    }
-
-    // 2) fold in linked_uids: if UID maps to a user, apply to that user
-    for (const [uid, obj] of Object.entries(linked)) {
-      const pts = Number(obj?.points || 0);
-      const mappedUser = rfidToUser?.[uid];
-      if (mappedUser && users[mappedUser]) {
-        const key = `user:${mappedUser}`;
-        const prev = entries.get(key) || { name: (users[mappedUser].name || users[mappedUser].email || `User ${mappedUser.slice(0,6)}`), points: 0 };
-        // treat points as absolute; keep the larger (change to + if you want sum)
-        entries.set(key, { name: prev.name, points: Math.max(prev.points, pts) });
-      } else {
-        const key = `uid:${uid}`;
-        const prev = entries.get(key) || { name: `UID ${uid}`, points: 0 };
-        entries.set(key, { name: prev.name, points: Math.max(prev.points, pts) });
-      }
-    }
-
-    // 3) include unlinked_uids as UID rows
-    for (const [uid, obj] of Object.entries(unlinked)) {
-      const pts = Number(obj?.points || 0);
-      const key = `uid:${uid}`;
-      const prev = entries.get(key) || { name: `UID ${uid}`, points: 0 };
-      entries.set(key, { name: prev.name, points: Math.max(prev.points, pts) });
-    }
-
-    // sort + paint
-    const sorted = [...entries.values()].sort((a,b) => (b.points||0) - (a.points||0));
-    leaderboardList.innerHTML = "";
-    if (sorted.length === 0) {
-      leaderboardList.innerHTML = "<li>No data yet.</li>";
-      return;
-    }
-    sorted.forEach((row, i) => {
-      const trophy = i===0 ? " 🥇" : i===1 ? " 🥈" : i===2 ? " 🥉" : "";
-      const li = document.createElement("li");
-      li.innerHTML = `<span class="rank">${i+1}</span>. ${row.name}${trophy} <span>${row.points||0} pts</span>`;
-      leaderboardList.appendChild(li);
+    // auth-driven nav
+    onAuthStateChanged(auth, user=>{
+      const isLoggedIn = !!user;
+      document.cookie = `loggedIn=${isLoggedIn}; path=/`;
+      const show = (id, on)=>{ const el=document.getElementById(id); if(el) el.style.display = on? "": "none"; };
+      show("signupLink", !isLoggedIn);
+      show("loginLink",  !isLoggedIn);
+      show("signupLinkMobile", !isLoggedIn);
+      show("loginLinkMobile",  !isLoggedIn);
     });
-  }
 
-  // ---------- Helpers already used by your page ----------
-  window.logout = () => signOut(auth).then(() => { document.cookie="loggedIn=false; path=/"; location.href="login.html"; });
-  window.toggleMobileNav = () => document.getElementById("mobileDropdown").classList.toggle("show");
-  window.checkLogin = (event) => {
-    const isLoggedIn = document.cookie.includes("loggedIn=true");
-    if (!isLoggedIn) {
-      event.preventDefault();
-      const popup = document.getElementById("popupMessage");
-      popup.style.display="block"; setTimeout(()=>popup.style.display="none", 4000);
+    // ------- utilities -------
+    function render(rows){
+      boardEl.innerHTML = "";
+      if (!rows.length) { boardEl.innerHTML = "<li>No users yet.</li>"; return; }
+      rows.forEach((row, idx)=>{
+        const li = document.createElement("li");
+        const medal = idx===0 ? " 🥇" : idx===1 ? " 🥈" : idx===2 ? " 🥉" : "";
+        li.innerHTML = `
+          <div><span class="rank">${idx+1}</span> <span class="name">${row.name}</span>${medal}</div>
+          <div class="points">${row.points||0} pts</div>`;
+        boardEl.appendChild(li);
+      });
     }
-  }
-</script>
 
-    <script>
-function toggleSettings() { document.getElementById("settingsPanel").classList.toggle("show"); }
-function toggleMobileNav() { document.getElementById("mobileDropdown").classList.toggle("show"); }
-function logout() {
-  document.cookie = "loggedIn=false; path=/";
-  window.location.href = "login.html";
-}
-
-// Update nav links
-const isLoggedIn = document.cookie.includes("loggedIn=true");
-document.getElementById("signupLink").style.display = isLoggedIn ? "none" : "inline";
-document.getElementById("loginLink").style.display = isLoggedIn ? "none" : "inline";
-if (document.getElementById("signupLinkMobile")) {
-  document.getElementById("signupLinkMobile").style.display = isLoggedIn ? "none" : "block";
-  document.getElementById("loginLinkMobile").style.display = isLoggedIn ? "none" : "block";
-}
-  // <!-- Start of ChatBot (www.chatbot.com) code -->
-
-  window._ow = window._ow || {};
-  window.__ow = window.__ow || {};
-  window.__ow.organizationId = "d8d1b35d-3974-4620-802f-b6383b2e7a1c";
-  window.__ow.template_id = "7d4a29cb-ee55-4528-803a-d58f9fe8d3fc";
-  window.__ow.integration_name = "manual_settings";
-  window.__ow.product_name = "chatbot";   
-
-  (function(n, t, c) {
-    function i(n) { 
-      return e.h ? e._h.apply(null, n) : e._q.push(n); 
+    // Query rfid_to_user for a given userId (requires .indexOn:["uid"])
+    async function getRFIDForUser(userId){
+      const q = query(ref(db, "rfid_to_user"), orderByChild("uid"), equalTo(userId));
+      const snap = await get(q);
+      if (!snap.exists()) return null;
+      const obj = snap.val();
+      return Object.keys(obj)[0] || null;
     }
-    var e = {
-      _q: [],
-      _h: null,
-      _v: "2.0",
-      on: function() { i(["on", c.call(arguments)]) },
-      once: function() { i(["once", c.call(arguments)]) },
-      off: function() { i(["off", c.call(arguments)]) },
-      get: function() {
-        if (!e._h) throw new Error("[OpenWidget] You can't use getters before load.");
-        return i(["get", c.call(arguments)]);
-      },
-      call: function() { i(["call", c.call(arguments)]) },
-      init: function() {
-        var n = t.createElement("script");
-        n.async = !0;
-        n.type = "text/javascript";
-        n.src = "https://cdn.openwidget.com/openwidget.js";
-        t.head.appendChild(n);
+
+    // cache of listeners so we can detach across refreshes
+    const pointUnsubs = new Map(); // rfid -> unsubscribe
+
+    function detachAllPoints(){
+      for (const fn of pointUnsubs.values()) { try { fn(); } catch(_){} }
+      pointUnsubs.clear();
+    }
+
+    // Build live leaderboard:
+    // 1) watch /users
+    // 2) for each user resolve RFID via rfid_to_user (query)
+    // 3) attach live listener to linked_uids/<rfid>/points
+    onValue(ref(db, "users"), async (usersSnap)=>{
+      const users = usersSnap.exists() ? usersSnap.val() : {};
+      const rows  = Object.entries(users).map(([uid, u]) => ({
+        uid, name: (u?.name || u?.email || `User ${uid.slice(0,6)}`), points: 0, rfid: null
+      }));
+
+      // detach old point listeners
+      detachAllPoints();
+
+      // resolve RFIDs and subscribe to points
+      const jobs = rows.map(async (row)=>{
+        try{
+          const rfid = await getRFIDForUser(row.uid);
+          row.rfid = rfid;
+          if (rfid){
+            const pRef = ref(db, `linked_uids/${rfid}/points`);
+            const unsub = onValue(pRef, (ps)=>{
+              row.points = ps.exists()? ps.val() : 0;
+              const sorted = [...rows].sort((a,b)=>(b.points||0)-(a.points||0));
+              render(sorted);
+            }, (err)=>{
+              console.warn("points listener error:", err?.message);
+            });
+            pointUnsubs.set(rfid, unsub);
+          } else {
+            row.points = 0; // unlinked → 0
+          }
+        } catch {
+          row.points = 0;
+        }
+      });
+
+      await Promise.all(jobs);
+      const sorted = [...rows].sort((a,b)=>(b.points||0)-(a.points||0));
+      render(sorted);
+    }, (err)=>{
+      boardEl.innerHTML = `<li>Error loading leaderboard: ${err?.message||"Permission denied"}</li>`;
+    });
+
+    // nav helpers
+    window.toggleMobileNav = ()=> document.getElementById("mobileDropdown").classList.toggle("show");
+    window.checkLogin = (e)=>{
+      const isLoggedIn = document.cookie.includes("loggedIn=true");
+      if (!isLoggedIn) {
+        e.preventDefault();
+        const p = document.getElementById("popupMessage");
+        p.style.display="block"; setTimeout(()=>p.style.display="none", 3500);
       }
     };
-    !n._ow.asyncInit && e.init();
-    n.OpenWidget = n.OpenWidget || e;
-  }(window, document, [].slice))
-</script>
-
+    window.logout = ()=> signOut(auth).then(()=>{ document.cookie="loggedIn=false; path=/"; location.href="login.html"; });
+  </script>
 </body>
 </html>
-
-
-
-
-
