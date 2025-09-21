@@ -8,15 +8,17 @@
   <style>
     body { font-family: system-ui, sans-serif; margin:0; background:#0a192a; color:#fff; }
 
-    /* === NAV identical to leaderboard === */
+    /* === NAV (pixel-match to leaderboard) === */
     .topnav {
       display:flex; justify-content:space-between; align-items:center;
       padding:1rem; background:#000; color:#fff;
     }
     .nav-center { font-size:1.2rem; font-weight:700; }
-    .nav-links a { color:#fff; text-decoration:none; margin-left:1rem; }
-    .nav-links a:hover { text-decoration:underline; }
     .gear { font-size:1.5rem; cursor:pointer; }
+    .nav-links { display:flex; gap:1rem; align-items:center; }
+    .topnav a,
+    .topnav a:visited { color:#fff !important; text-decoration:none; }
+    .topnav a:hover { text-decoration:underline; }
     .hamburger { display:none; font-size:1.5rem; background:none; border:none; color:white; }
     @media (max-width:600px){
       .hamburger { display:block; }
@@ -29,6 +31,7 @@
       .nav-dropdown a { color:white; margin:.5rem 0; text-decoration:none; }
     }
 
+    /* === Card === */
     .container { max-width:640px; margin:3rem auto; padding:2rem; background:#07121f; border-radius:12px; box-shadow:0 4px 12px rgba(0,0,0,.5); }
     .info-row { margin-bottom:1rem; }
     .info-label { font-weight:700; margin-right:6px; }
@@ -38,11 +41,12 @@
     .btn-back { background:#444; color:white; }
     .btn-logout { background:#e74c3c; color:white; }
     .btn-reset { background:#3498db; color:white; }
-    .btn-unlink { background:#f39c12; color:white; display:none; } /* JS will flip to inline-block */
+    .btn-unlink { background:#f39c12; color:white; display:none; } /* JS flips to inline-block */
     .hint { opacity:.8; font-size:.9rem; }
   </style>
 </head>
 <body>
+  <!-- Header -->
   <nav class="topnav">
     <div class="nav-left">
       <span class="gear" onclick="location.href='profile.html'">⚙️</span>
@@ -59,6 +63,7 @@
     <button class="hamburger" onclick="toggleMobileNav()">☰</button>
   </nav>
 
+  <!-- Mobile dropdown -->
   <div class="nav-dropdown" id="mobileDropdown">
     <a href="index.html">About</a>
     <a href="products.html">Services</a>
@@ -68,28 +73,14 @@
     <a href="login.html"  id="loginLinkMobile">Login</a>
   </div>
 
+  <!-- Profile card -->
   <div class="container">
     <h2>Your Profile</h2>
 
-    <div class="info-row">
-      <span class="info-label">Name:</span>
-      <span id="name">Loading…</span>
-    </div>
-
-    <div class="info-row">
-      <span class="info-label">Email:</span>
-      <span id="email">Loading…</span>
-    </div>
-
-    <div class="info-row">
-      <span class="info-label">RFID Linked:</span>
-      <span id="rfid" class="uid">Checking…</span>
-    </div>
-
-    <div class="info-row">
-      <span class="info-label">User ID:</span>
-      <span id="uid" class="uid">—</span>
-    </div>
+    <div class="info-row"><span class="info-label">Name:</span> <span id="name">Loading…</span></div>
+    <div class="info-row"><span class="info-label">Email:</span> <span id="email">Loading…</span></div>
+    <div class="info-row"><span class="info-label">RFID Linked:</span> <span id="rfid" class="uid">Checking…</span></div>
+    <div class="info-row"><span class="info-label">User ID:</span> <span id="uid" class="uid">—</span></div>
 
     <div class="hint">Points shown live from <code>linked_uids/&lt;rfid&gt;/points</code>.</div>
 
@@ -101,10 +92,11 @@
     </div>
   </div>
 
+  <!-- App -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
     import { getAuth, onAuthStateChanged, signOut, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
-    import { getDatabase, ref, onValue, get, set, update, remove, query, orderByChild, equalTo } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-database.js";
+    import { getDatabase, ref, onValue, get, set, update, remove, query, orderByChild, equalTo, runTransaction } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-database.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyDW5APPZMu-lojVRNg89ZDBEY14YD77xd4",
@@ -123,7 +115,7 @@
     const rfidEl    = document.getElementById("rfid");
     const unlinkBtn = document.getElementById("unlinkBtn");
 
-    // --- NAV helpers (same as leaderboard) ---
+    // --- Nav helpers ---
     window.toggleMobileNav = () =>
       document.getElementById("mobileDropdown").classList.toggle("show");
 
@@ -135,10 +127,9 @@
       show("loginLinkMobile",  !isLoggedIn);
     }
 
-    // --- Points listener ---
+    // --- Points watcher ---
     let pointsUnsub = null;
     function detachPoints(){ if(pointsUnsub){ try{ pointsUnsub(); }catch{} pointsUnsub=null; } }
-
     function watchPoints(rfid){
       detachPoints();
       if(!rfid) return;
@@ -152,7 +143,35 @@
       });
     }
 
-    // --- RFID lookup (requires rfid_to_user .indexOn:["uid"]) ---
+    // --- Robust link function (transaction; handles legacy strings) ---
+    async function linkRFIDTransaction(rfid){
+      const user = auth.currentUser;
+      if (!user) throw new Error("Not logged in");
+      const mapRef = ref(db, `rfid_to_user/${rfid}`);
+
+      const res = await runTransaction(mapRef, (current) => {
+        if (current === null) return { uid: user.uid };           // claim
+        if (typeof current === "string") {
+          if (current === user.uid) return { uid: user.uid };      // convert legacy self
+          return;                                                  // someone else → abort
+        }
+        if (current && typeof current === "object" && current.uid === user.uid) {
+          return current;                                          // idempotent
+        }
+        return;                                                    // someone else → abort
+      }, { applyLocally:false });
+
+      if (!res.committed) throw new Error("This RFID is already linked to another account.");
+
+      await Promise.all([
+        update(ref(db, `users/${user.uid}`), { rfid }),
+        update(ref(db, `linked_uids/${rfid}`), { points: 0 })
+      ]);
+      return rfid;
+    }
+    // Usage example (call when you actually link): await linkRFIDTransaction('46AA4680');
+
+    // --- RFID lookup (indexed query) ---
     async function getRFIDForUser(userId){
       const q = query(ref(db, "rfid_to_user"), orderByChild("uid"), equalTo(userId));
       const snap = await get(q);
@@ -161,14 +180,12 @@
       return Object.keys(obj)[0] || null;
     }
 
-    // --- Full unlink cleanup helper ---
+    // --- Unlink cleanup ---
     async function cleanupUnlinkForUser(userId){
-      // 1) read RFID
       const rfidSnap = await get(ref(db, `users/${userId}/rfid`));
       if (!rfidSnap.exists() || !rfidSnap.val()) throw new Error("No RFID linked to this account.");
       const rfid = rfidSnap.val();
 
-      // 2) move linked_uids/<rfid> -> unlinked_uids/<rfid>
       const linkedRef = ref(db, `linked_uids/${rfid}`);
       const linkedSnap = await get(linkedRef);
       if (linkedSnap.exists()){
@@ -176,19 +193,9 @@
         await remove(linkedRef);
       }
 
-      // 3) remove rfid_to_user/<rfid>  (rules now allow owner delete)
-      await remove(ref(db, `rfid_to_user/${rfid}`));
-
-      // 4) delete users/<uid>/events
+      await remove(ref(db, `rfid_to_user/${rfid}`));     // owner-only delete (rules allow)
       await remove(ref(db, `users/${userId}/events`)).catch(()=>{});
-
-      // 5) clear user fields
-      await update(ref(db, `users/${userId}`), {
-        rfid: null,
-        rfid_uid: null,
-        points: 0
-      });
-
+      await update(ref(db, `users/${userId}`), { rfid:null, rfid_uid:null, points:0 });
       return rfid;
     }
 
@@ -225,7 +232,6 @@
         let rfid = data.rfid || null;
 
         if (!rfid){
-          // Auto-recover from mapping (if older sessions missed setting users/<uid>/rfid)
           try {
             const recovered = await getRFIDForUser(user.uid);
             if (recovered){
@@ -236,7 +242,7 @@
         }
 
         if (rfid){
-          unlinkBtn.style.display = "inline-block";   // force visible when linked
+          unlinkBtn.style.display = "inline-block";
           watchPoints(rfid);
         } else {
           unlinkBtn.style.display = "none";
@@ -258,23 +264,6 @@
         alert("No email for this account.");
       }
     };
-
-    /* ====== OPTIONAL: one-time migration for old string mappings (DISABLED by default) ======
-       If you previously wrote rfid_to_user/<rfid> = "<uid>", uncomment to normalize to { uid: "<uid>" }.
-       Make sure you're logged in as any user; rules allow reads/writes here.
-    */
-    /*
-    (async () => {
-      const snap = await get(ref(db, "rfid_to_user"));
-      if (!snap.exists()) return;
-      const all = snap.val() || {};
-      const updates = {};
-      for (const [rfid, val] of Object.entries(all)) {
-        if (typeof val === "string") updates[`rfid_to_user/${rfid}`] = { uid: val };
-      }
-      if (Object.keys(updates).length) await update(ref(db), updates);
-    })();
-    */
   </script>
 </body>
 </html>
