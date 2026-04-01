@@ -61,7 +61,7 @@ c
   <a href="index.html">About</a>
   <a href="products.html">Services</a>
   <a href="dashboard.html">Dashboard</a>
-  <a href="leaderboard.html">Leaderboard</a>
+<a id="leaderboardLink" href="#">Leaderboard</a>
 </div>
 
 <!-- Settings Panel -->
@@ -119,6 +119,11 @@ c
   </div>
 </div>
 
+  <script>
+  const referralCode = "USER123"; // replace with your real referral/user code
+  document.getElementById("leaderboardLink").href =
+    `https://praj-gg.github.io/leaderboard/?ref=${encodeURIComponent(referralCode)}`;
+</script>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
 import { getDatabase, ref, get, set, update, remove, onValue, runTransaction } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-database.js";
